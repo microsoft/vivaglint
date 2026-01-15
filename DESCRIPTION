@@ -1,0 +1,28 @@
+Package: vivaglint
+Type: Package
+Title: Analysis Tools for Viva Glint Survey Data
+Version: 0.1.0
+Authors@R:
+    person("Eric", "Knudsen", , "ericknudsen@example.com", role = c("aut", "cre"))
+Description: Provides functions for importing, validating, and analyzing Viva Glint
+    survey data exports. Includes tools for data reshaping, question-level analysis,
+    multi-cycle comparisons, and organizational hierarchy analysis.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Imports:
+    dplyr (>= 1.0.0),
+    tidyr (>= 1.0.0),
+    readr (>= 2.0.0),
+    stringr (>= 1.4.0),
+    lubridate (>= 1.7.0),
+    data.tree (>= 1.0.0),
+    purrr (>= 0.3.0)
+Suggests:
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown,
+    psych (>= 2.0.0)
+Config/testthat/edition: 3
