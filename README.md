@@ -8,32 +8,19 @@ R package for analyzing Viva Glint survey data with comprehensive statistical to
 
 ## Installation
 
-Install the package directly from a local source using `devtools` or `remotes`:
-
-```r
-# Install from local directory
-install.packages("devtools")
-devtools::install_local("path/to/vivaglint")
-
-# Or using remotes
-install.packages("remotes")
-remotes::install_local("path/to/vivaglint")
-```
-
-If installing from GitHub (when available):
+Install the package directly from GitHub (install `devtools` first, if not already installed):
 
 ```r
 # Install from GitHub
-devtools::install_github("username/vivaglint")
+devtools::install_github("microsoft/vivaglint")
 ```
 
 ## Core Capabilities
 
 ### 1. **Data Import & Validation**
 - Automatic validation of Glint export structure
-- Date parsing with format detection
-- Question metadata extraction
-- Comprehensive error messages for troubleshooting
+- Survey metadata extraction
+
 
 ### 2. **Survey Analysis**
 - **Summary statistics**: Mean, SD, response rates, favorability percentages
@@ -42,19 +29,9 @@ devtools::install_github("username/vivaglint")
 - **Manager aggregations**: Roll up results by organizational hierarchy
 
 ### 3. **Advanced Analytics**
-- **Correlation analysis**: Spearman, Pearson, and Kendall methods
+- **Correlation analysis**: Spearman, Pearson, and Kendall methods with significance testing
 - **Factor analysis**: Identify latent constructs with multiple rotation options
 - **Attrition prediction**: Link survey responses to employee turnover
-
-### 4. **Data Reshaping**
-- Convert wide survey data to long format
-- Extract comments for qualitative analysis
-- Flexible output formats for different analysis needs
-
-### 5. **Organizational Hierarchy**
-- Manager-level aggregations (direct or full tree)
-- Recursive report traversal
-- Team-level metrics and comparisons
 
 ## Quick Start
 
@@ -107,44 +84,6 @@ attrition <- analyze_attrition(
 | `pivot_long()` | Reshape data to long format |
 | `aggregate_by_manager()` | Roll up results by manager |
 
-## Favorability Classifications
-
-The package uses Glint's standard favorability classifications based on scale points:
-
-| Scale | Favorable | Neutral | Unfavorable |
-|-------|-----------|---------|-------------|
-| 2-pt  | 2         | -       | 1           |
-| 3-pt  | 3         | 2       | 1           |
-| 4-pt  | 4         | 2-3     | 1           |
-| 5-pt  | 4-5       | 3       | 1-2         |
-| 6-pt  | 4-6       | -       | 1-3         |
-| 7-pt  | 6-7       | 4-5     | 1-3         |
-| 8-pt  | 6-8       | 4-5     | 1-3         |
-| 9-pt  | 7-9       | 4-6     | 1-3         |
-| 10-pt | 8-10      | 4-7     | 1-3         |
-| 11-pt | 10-11     | 8-9     | 1-7         |
-
-## Output Examples
-
-### Survey Summary
-```r
-summary <- summarize_survey(survey, scale_points = 5)
-```
-
-| question | mean | sd | n_responses | response_rate | pct_favorable | pct_neutral | pct_unfavorable |
-|----------|------|----|-----------|--------------|--------------| ------------|-----------------|
-| My work is meaningful | 3.6 | 1.14 | 5 | 1.00 | 60.0 | 20.0 | 20.0 |
-| I feel valued | 4.2 | 0.84 | 5 | 1.00 | 80.0 | 20.0 | 0.0 |
-
-### Attrition Analysis
-```r
-attrition <- analyze_attrition(survey, attrition_file,
-                               emp_id_col = "EMP ID",
-                               term_date_col = "Termination Date",
-                               scale_points = 5)
-```
-
-Shows risk ratios indicating how much more likely employees with unfavorable responses are to leave compared to those with favorable responses.
 
 ## Dependencies
 
@@ -161,7 +100,7 @@ Shows risk ratios indicating how much more likely employees with unfavorable res
 
 ## Documentation
 
-Access function documentation within R:
+Access function documentation within R or on MSLearn:
 
 ```r
 ?read_glint_survey
@@ -175,33 +114,17 @@ Additional documentation files:
 - `FUNCTION_OUTPUTS.md` - Detailed output structure documentation
 - `PACKAGE_USAGE.md` - Comprehensive usage guide
 
-## Package Structure
 
-```
-vivaglint/
-├── R/
-│   ├── import.R       # Data import and validation
-│   ├── analyze.R      # Statistical analysis functions
-│   ├── reshape.R      # Data transformation
-│   ├── hierarchy.R    # Organizational analysis
-│   └── utils.R        # Helper functions
-├── tests/
-│   └── testthat/      # Test suite (124 tests)
-├── man/               # Function documentation
-└── vignettes/         # Usage examples
-```
 
 ## Data Privacy & Security
 
-This package processes survey data locally and does not transmit data to external services. All analysis is performed within your R environment. Ensure compliance with your organization's data handling policies when working with employee survey data.
+This package processes survey data locally and does not transmit data to any external services, including those of Microsoft. All analysis is performed within your R environment. Ensure compliance with your organization's data handling policies when working with employee survey data.
 
-## License
+## Code of Conduct
 
-MIT License
+Please read the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/) prior to engaging with this package.
 
-## Support
-
-For issues, questions, or contributions, please refer to the package maintainer.
+This project may contain trademarks or logos for projects, products, or services. Authorized use of Microsoft trademarks or logos is subject to and must follow Microsoft's Trademark & Brand Guidelines. Use of Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft sponsorship. Any use of third-party trademarks or logos are subject to those third-party's policies.
 
 ---
 
