@@ -21,7 +21,7 @@ A tibble with one row per question containing:
 \item{n_responses}{Count of non-blank, non-null responses}
 \item{n_skips}{Count of blank or null responses}
 \item{n_total}{Total number of respondents}
-\item{response_rate}{Proportion of respondents who saw question}
+\item{response_rate}{Proportion of respondents who saw question (rounded to 2 decimal places)}
 }
 }
 \description{
