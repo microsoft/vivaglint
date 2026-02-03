@@ -424,47 +424,6 @@ manager_filtered <- aggregate_by_manager(survey, min_team_size = 3)
 
 ---
 
-## 10. build_org_tree()
-
-**Returns:** A data.tree Node object
-
-```r
-org_tree <- build_org_tree(survey)
-print(org_tree)
-```
-
-**Output:**
-```
-                       levelName
-1  Organization
-2   ¦--Alice Smith (m001)
-3   ¦   ¦--Alice Smith (e001)
-4   ¦   °--Bob Jones (e002)
-5   ¦--Bob Jones (m002)
-6   ¦   ¦--Carol White (e003)
-7   ¦   °--David Brown (e004)
-8   °--Carol White (m003)
-9       °--Eve Davis (e005)
-```
-
-**Accessing tree properties:**
-```r
-# Get all employee IDs
-org_tree$Get("emp_id", filterFun = function(x) !is.null(x$emp_id))
-
-# Count levels in the hierarchy
-org_tree$height
-
-# Navigate the tree
-org_tree$children[[1]]$name  # First child node
-org_tree$children[[1]]$emp_id  # First child's employee ID
-
-# Get all leaf nodes (employees with no reports)
-org_tree$Get("name", filterFun = isLeaf)
-```
-
----
-
 ## Summary of Return Types
 
 | Function | Return Type | Dimensions (typical) |
@@ -478,7 +437,6 @@ org_tree$Get("name", filterFun = isLeaf)
 | `extract_survey_factors()` | List (survey_factors) | list with 6 components |
 | `pivot_long()` | Tibble or List | (n×q)×13 or list of 2 tibbles |
 | `aggregate_by_manager()` | Tibble | (m×q)×11 |
-| `build_org_tree()` | data.tree Node | hierarchical |
 
 **Legend:**
 - n = number of respondents

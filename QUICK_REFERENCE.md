@@ -74,11 +74,6 @@ comments <- pivot_comments_long(survey)
 ### 👥 Hierarchy Functions
 
 ```r
-# Build organizational tree
-org_tree <- build_org_tree(survey)
-# Returns: data.tree Node object
-# Hierarchical structure showing reporting relationships
-
 # Aggregate by manager
 manager_agg <- aggregate_by_manager(survey, full_tree = FALSE)
 # Returns: 6 rows × 11 columns (3 managers × 2 questions)
@@ -129,7 +124,7 @@ factors <- extract_survey_factors(survey, rotation = "oblimin")
 - **n_responses**: Count of non-blank responses
 - **n_skips**: Count of blank/null responses
 - **n_total**: Total respondents (n_responses + n_skips)
-- **response_rate**: (n_responses + n_skips) / n_total
+- **response_rate**: (n_responses + n_skips) / n_total, rounded to 2 decimal places
 - **count_X**: Number of responses with value X
 - **pct_X**: Percentage of responses with value X
 - **change_from_previous**: Difference in mean from prior cycle
@@ -195,7 +190,6 @@ comments <- pivot_comments_long(survey) %>%
 | `compare_cycles()` | multiple surveys | q×c | 11 |
 | `pivot_long()` | survey | n×q or varies | 13 |
 | `aggregate_by_manager()` | survey | m×q | 11 |
-| `build_org_tree()` | survey | hierarchical | N/A |
 | `get_correlations()` | survey | q×q | 5 or matrix |
 | `extract_survey_factors()` | survey | list | N/A |
 

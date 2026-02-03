@@ -101,10 +101,6 @@ comparison %>%
 ### 5. Organizational Hierarchy Analysis
 
 ```r
-# Build organizational tree
-org_tree <- build_org_tree(survey)
-print(org_tree)
-
 # Aggregate responses by manager (direct reports only)
 manager_summary <- aggregate_by_manager(survey)
 head(manager_summary)

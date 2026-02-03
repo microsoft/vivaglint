@@ -16,7 +16,7 @@
 #'     \item{n_responses}{Count of non-blank, non-null responses}
 #'     \item{n_skips}{Count of blank or null responses}
 #'     \item{n_total}{Total number of respondents}
-#'     \item{response_rate}{Proportion of respondents who saw question}
+#'     \item{response_rate}{Proportion of respondents who saw question (rounded to 2 decimal places)}
 #'   }
 #'
 #' @export
@@ -76,7 +76,7 @@ summarize_survey <- function(survey, questions = "all") {
     sd_response <- if (n_responses > 1) sd(valid_responses, na.rm = TRUE) else NA_real_
 
     # Calculate response rate
-    response_rate <- (n_responses + n_skips) / n_total
+    response_rate <- round((n_responses + n_skips) / n_total, 2)
 
     # Create result tibble
     result <- dplyr::tibble(
@@ -598,6 +598,202 @@ extract_survey_factors <- function(survey, n_factors = NULL, rotation = "oblimin
 
   class(result) <- c("survey_factors", "list")
   return(result)
+}
+
+
+#' Analyze Employee Attrition
+#'
+#' Analyzes the relationship between survey responses and employee attrition,
+#' calculating how much more (or less) likely employees are to leave within
+#' specified time periods if they respond unfavorably vs favorably to survey questions.
+#'
+#' @param survey A glint_survey object or data frame containing survey data
+#' @param attrition_file Path to CSV file containing employee attrition data
+#' @param emp_id_col Character string specifying the column name for employee ID
+#' @param term_date_col Character string specifying the column name for termination date
+#' @param scale_points Integer specifying the number of scale points (2-11)
+#' @param time_periods Integer vector specifying time periods in days to analyze
+#'   (default: c(30, 90, 180))
+#'
+#' @return A tibble with one row per question-time period combination containing:
+#'   \describe{
+#'     \item{question}{The question text}
+#'     \item{days}{The time period in days}
+#'     \item{favorable_n}{Number of employees who responded favorably}
+#'     \item{favorable_attrition}{Proportion who left within time period (favorable)}
+#'     \item{unfavorable_n}{Number of employees who responded unfavorably}
+#'     \item{unfavorable_attrition}{Proportion who left within time period (unfavorable)}
+#'     \item{attrition_ratio}{Ratio of unfavorable to favorable attrition rates}
+#'   }
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' survey <- read_glint_survey("survey_export.csv")
+#'
+#' # Analyze attrition for 5-point scale survey
+#' attrition <- analyze_attrition(
+#'   survey,
+#'   attrition_file = "employee_attributes.csv",
+#'   emp_id_col = "EMP ID",
+#'   term_date_col = "Termination Date",
+#'   scale_points = 5,
+#'   time_periods = c(30, 90, 180)
+#' )
+#' print(attrition)
+#' }
+analyze_attrition <- function(survey, attrition_file, emp_id_col, term_date_col,
+                              scale_points, time_periods = c(30, 90, 180)) {
+  # Validate scale_points
+  if (!scale_points %in% 2:11) {
+    stop("scale_points must be an integer between 2 and 11")
+  }
+
+  # Define favorability classifications based on scale points
+  favorability_map <- list(
+    "2" = list(favorable = c(2), neutral = c(), unfavorable = c(1)),
+    "3" = list(favorable = c(3), neutral = c(2), unfavorable = c(1)),
+    "4" = list(favorable = c(4), neutral = c(2, 3), unfavorable = c(1)),
+    "5" = list(favorable = c(4, 5), neutral = c(3), unfavorable = c(1, 2)),
+    "6" = list(favorable = c(4, 5, 6), neutral = c(), unfavorable = c(1, 2, 3)),
+    "7" = list(favorable = c(6, 7), neutral = c(4, 5), unfavorable = c(1, 2, 3)),
+    "8" = list(favorable = c(6, 7, 8), neutral = c(4, 5), unfavorable = c(1, 2, 3)),
+    "9" = list(favorable = c(7, 8, 9), neutral = c(4, 5, 6), unfavorable = c(1, 2, 3)),
+    "10" = list(favorable = c(8, 9, 10), neutral = c(4, 5, 6, 7), unfavorable = c(1, 2, 3)),
+    "11" = list(favorable = c(10, 11), neutral = c(8, 9), unfavorable = c(1, 2, 3, 4, 5, 6, 7))
+  )
+
+  favorability <- favorability_map[[as.character(scale_points)]]
+
+  # Handle glint_survey objects
+  if (inherits(survey, "glint_survey")) {
+    survey_data <- survey$data
+    questions <- survey$metadata$questions$question
+  } else {
+    survey_data <- survey
+    questions <- extract_questions(survey)$question
+  }
+
+  # Read attrition file
+  if (!file.exists(attrition_file)) {
+    stop(sprintf("Attrition file not found: '%s'", attrition_file))
+  }
+
+  attrition_data <- readr::read_csv(attrition_file, show_col_types = FALSE)
+
+  # Validate columns exist
+  if (!emp_id_col %in% names(attrition_data)) {
+    stop(sprintf("Column '%s' not found in attrition file", emp_id_col))
+  }
+  if (!term_date_col %in% names(attrition_data)) {
+    stop(sprintf("Column '%s' not found in attrition file", term_date_col))
+  }
+  if (!emp_id_col %in% names(survey_data)) {
+    stop(sprintf("Column '%s' not found in survey data", emp_id_col))
+  }
+
+  # Parse termination dates (try multiple formats)
+  attrition_data[[term_date_col]] <- tryCatch(
+    {
+      # Try different date parsing functions
+      parsed <- lubridate::parse_date_time(
+        attrition_data[[term_date_col]],
+        orders = c("ymd", "mdy", "dmy", "ymd HMS", "mdy HMS", "dmy HMS")
+      )
+      as.Date(parsed)
+    },
+    error = function(e) {
+      stop(sprintf(
+        "Error parsing termination dates in column '%s': %s",
+        term_date_col, e$message
+      ))
+    }
+  )
+
+  # Get survey completion date
+  if (!"Survey Cycle Completion Date" %in% names(survey_data)) {
+    stop("Survey data must contain 'Survey Cycle Completion Date' column")
+  }
+
+  # Join survey data with attrition data
+  combined_data <- survey_data %>%
+    dplyr::left_join(
+      attrition_data %>% dplyr::select(dplyr::all_of(c(emp_id_col, term_date_col))),
+      by = emp_id_col
+    )
+
+  # Convert survey completion date to Date
+  combined_data$survey_date <- as.Date(combined_data$`Survey Cycle Completion Date`)
+
+  # Calculate days to termination
+  combined_data$days_to_term <- as.numeric(
+    combined_data[[term_date_col]] - combined_data$survey_date
+  )
+
+  # Analyze each question for each time period
+  results <- purrr::map_dfr(questions, function(question_text) {
+    # Get responses for this question
+    responses <- combined_data[[question_text]]
+
+    # Classify responses as favorable/unfavorable
+    response_class <- dplyr::case_when(
+      responses %in% favorability$favorable ~ "favorable",
+      responses %in% favorability$unfavorable ~ "unfavorable",
+      TRUE ~ "neutral"
+    )
+
+    # Analyze for each time period
+    purrr::map_dfr(time_periods, function(days) {
+      # Determine if employee left within time period
+      left_within_period <- !is.na(combined_data$days_to_term) &
+        combined_data$days_to_term > 0 &
+        combined_data$days_to_term <= days
+
+      # Calculate attrition for favorable responses
+      favorable_mask <- response_class == "favorable" & !is.na(responses)
+      favorable_n <- sum(favorable_mask)
+      favorable_attrition <- if (favorable_n > 0) {
+        sum(left_within_period[favorable_mask]) / favorable_n
+      } else {
+        NA_real_
+      }
+
+      # Calculate attrition for unfavorable responses
+      unfavorable_mask <- response_class == "unfavorable" & !is.na(responses)
+      unfavorable_n <- sum(unfavorable_mask)
+      unfavorable_attrition <- if (unfavorable_n > 0) {
+        sum(left_within_period[unfavorable_mask]) / unfavorable_n
+      } else {
+        NA_real_
+      }
+
+      # Calculate ratio
+      attrition_ratio <- if (!is.na(favorable_attrition) && !is.na(unfavorable_attrition)) {
+        if (favorable_attrition == 0 && unfavorable_attrition == 0) {
+          NA_real_  # No attrition in either group
+        } else if (favorable_attrition == 0 && unfavorable_attrition > 0) {
+          Inf  # Infinite risk ratio when favorable has no attrition
+        } else {
+          unfavorable_attrition / favorable_attrition
+        }
+      } else {
+        NA_real_
+      }
+
+      dplyr::tibble(
+        question = question_text,
+        days = days,
+        favorable_n = favorable_n,
+        favorable_attrition = round(favorable_attrition, 4),
+        unfavorable_n = unfavorable_n,
+        unfavorable_attrition = round(unfavorable_attrition, 4),
+        attrition_ratio = ifelse(is.finite(attrition_ratio), round(attrition_ratio, 2), attrition_ratio)
+      )
+    })
+  })
+
+  return(results)
 }
 
 
