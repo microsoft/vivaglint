@@ -1,6 +1,6 @@
 test_that("summarize_survey calculates metrics for single question", {
   survey <- read_glint_survey("fixtures/sample_survey.csv")
-  result <- summarize_survey(survey, questions = "My work is meaningful")
+  result <- summarize_survey(survey, scale_points = 5, questions = "My work is meaningful")
 
   expect_s3_class(result, "tbl_df")
   expect_equal(nrow(result), 1)
@@ -15,7 +15,7 @@ test_that("summarize_survey calculates metrics for single question", {
 
 test_that("summarize_survey calculates metrics for multiple specific questions", {
   survey <- read_glint_survey("fixtures/sample_survey.csv")
-  result <- summarize_survey(survey, questions = c("My work is meaningful", "I feel valued"))
+  result <- summarize_survey(survey, scale_points = 5, questions = c("My work is meaningful", "I feel valued"))
 
   expect_s3_class(result, "tbl_df")
   expect_equal(nrow(result), 2)
@@ -25,7 +25,7 @@ test_that("summarize_survey calculates metrics for multiple specific questions",
 
 test_that("summarize_survey does not include value distributions", {
   survey <- read_glint_survey("fixtures/sample_survey.csv")
-  result <- summarize_survey(survey, questions = "My work is meaningful")
+  result <- summarize_survey(survey, scale_points = 5, questions = "My work is meaningful")
 
   expect_false("value_counts" %in% names(result))
   expect_false("value_percents" %in% names(result))
@@ -35,7 +35,7 @@ test_that("summarize_survey does not include value distributions", {
 
 test_that("summarize_survey analyzes all questions", {
   survey <- read_glint_survey("fixtures/sample_survey.csv")
-  result <- summarize_survey(survey)
+  result <- summarize_survey(survey, scale_points = 5)
 
   expect_s3_class(result, "tbl_df")
   expect_equal(nrow(result), 2)
@@ -78,7 +78,7 @@ test_that("summarize_survey throws error for non-existent question", {
   survey <- read_glint_survey("fixtures/sample_survey.csv")
 
   expect_error(
-    summarize_survey(survey, questions = "Non-existent question"),
+    summarize_survey(survey, scale_points = 5, questions = "Non-existent question"),
     "Question\\(s\\) not found"
   )
 })

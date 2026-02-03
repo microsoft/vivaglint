@@ -2,9 +2,10 @@
 #'
 #' Calculates comprehensive metrics for survey questions, returning a summary
 #' analysis in tidy format. This includes mean, standard deviation, response counts,
-#' skip counts, and response rates.
+#' skip counts, response rates, and favorability percentages.
 #'
 #' @param survey A glint_survey object or data frame containing survey data
+#' @param scale_points Integer specifying the number of scale points (2-11)
 #' @param questions Character vector of question text(s) to analyze, or "all" to
 #'   analyze all questions (default: "all")
 #'
@@ -17,6 +18,9 @@
 #'     \item{n_skips}{Count of blank or null responses}
 #'     \item{n_total}{Total number of respondents}
 #'     \item{response_rate}{Proportion of respondents who saw question (rounded to 2 decimal places)}
+#'     \item{pct_favorable}{Percentage of responses classified as favorable}
+#'     \item{pct_neutral}{Percentage of responses classified as neutral}
+#'     \item{pct_unfavorable}{Percentage of responses classified as unfavorable}
 #'   }
 #'
 #' @export
@@ -25,14 +29,21 @@
 #' \dontrun{
 #' survey <- read_glint_survey("survey_export.csv")
 #'
-#' # Summarize all questions
-#' summary <- summarize_survey(survey)
+#' # Summarize all questions (5-point scale)
+#' summary <- summarize_survey(survey, scale_points = 5)
 #'
 #' # Summarize specific questions
-#' summary_subset <- summarize_survey(survey,
+#' summary_subset <- summarize_survey(survey, scale_points = 5,
 #'   questions = c("My work is meaningful", "I feel valued"))
 #' }
-summarize_survey <- function(survey, questions = "all") {
+summarize_survey <- function(survey, scale_points, questions = "all") {
+  # Validate scale_points
+  if (!scale_points %in% 2:11) {
+    stop("scale_points must be an integer between 2 and 11")
+  }
+
+  # Get favorability classification
+  favorability <- get_favorability_map(scale_points)
   # Handle glint_survey objects
   if (inherits(survey, "glint_survey")) {
     data <- survey$data
@@ -78,6 +89,21 @@ summarize_survey <- function(survey, questions = "all") {
     # Calculate response rate
     response_rate <- round((n_responses + n_skips) / n_total, 2)
 
+    # Calculate favorability percentages
+    if (n_responses > 0) {
+      n_favorable <- sum(valid_responses %in% favorability$favorable)
+      n_neutral <- sum(valid_responses %in% favorability$neutral)
+      n_unfavorable <- sum(valid_responses %in% favorability$unfavorable)
+
+      pct_favorable <- round((n_favorable / n_responses) * 100, 1)
+      pct_neutral <- round((n_neutral / n_responses) * 100, 1)
+      pct_unfavorable <- round((n_unfavorable / n_responses) * 100, 1)
+    } else {
+      pct_favorable <- NA_real_
+      pct_neutral <- NA_real_
+      pct_unfavorable <- NA_real_
+    }
+
     # Create result tibble
     result <- dplyr::tibble(
       question = question_text,
@@ -86,7 +112,10 @@ summarize_survey <- function(survey, questions = "all") {
       n_responses = n_responses,
       n_skips = n_skips,
       n_total = n_total,
-      response_rate = response_rate
+      response_rate = response_rate,
+      pct_favorable = pct_favorable,
+      pct_neutral = pct_neutral,
+      pct_unfavorable = pct_unfavorable
     )
 
     return(result)
@@ -236,6 +265,7 @@ expand_value_distributions <- function(analysis_df) {
 #' change scores and trends over time.
 #'
 #' @param ... Two or more glint_survey objects or data frames to compare
+#' @param scale_points Integer specifying the number of scale points (2-11)
 #' @param cycle_names Optional character vector of names for each cycle.
 #'   If not provided, will use "Cycle 1", "Cycle 2", etc.
 #'
@@ -257,10 +287,11 @@ expand_value_distributions <- function(analysis_df) {
 #' survey3 <- read_glint_survey("survey_2023_q3.csv")
 #'
 #' comparison <- compare_cycles(survey1, survey2, survey3,
+#'                               scale_points = 5,
 #'                               cycle_names = c("Q1 2023", "Q2 2023", "Q3 2023"))
 #' print(comparison)
 #' }
-compare_cycles <- function(..., cycle_names = NULL) {
+compare_cycles <- function(..., scale_points, cycle_names = NULL) {
   surveys <- list(...)
 
   if (length(surveys) < 2) {
@@ -276,7 +307,7 @@ compare_cycles <- function(..., cycle_names = NULL) {
 
   # Analyze each survey
   analyses <- purrr::map2_dfr(surveys, cycle_names, function(survey, cycle_name) {
-    result <- summarize_survey(survey)
+    result <- summarize_survey(survey, scale_points = scale_points)
     result$cycle <- cycle_name
     result
   })
@@ -650,21 +681,8 @@ analyze_attrition <- function(survey, attrition_file, emp_id_col, term_date_col,
     stop("scale_points must be an integer between 2 and 11")
   }
 
-  # Define favorability classifications based on scale points
-  favorability_map <- list(
-    "2" = list(favorable = c(2), neutral = c(), unfavorable = c(1)),
-    "3" = list(favorable = c(3), neutral = c(2), unfavorable = c(1)),
-    "4" = list(favorable = c(4), neutral = c(2, 3), unfavorable = c(1)),
-    "5" = list(favorable = c(4, 5), neutral = c(3), unfavorable = c(1, 2)),
-    "6" = list(favorable = c(4, 5, 6), neutral = c(), unfavorable = c(1, 2, 3)),
-    "7" = list(favorable = c(6, 7), neutral = c(4, 5), unfavorable = c(1, 2, 3)),
-    "8" = list(favorable = c(6, 7, 8), neutral = c(4, 5), unfavorable = c(1, 2, 3)),
-    "9" = list(favorable = c(7, 8, 9), neutral = c(4, 5, 6), unfavorable = c(1, 2, 3)),
-    "10" = list(favorable = c(8, 9, 10), neutral = c(4, 5, 6, 7), unfavorable = c(1, 2, 3)),
-    "11" = list(favorable = c(10, 11), neutral = c(8, 9), unfavorable = c(1, 2, 3, 4, 5, 6, 7))
-  )
-
-  favorability <- favorability_map[[as.character(scale_points)]]
+  # Get favorability classification
+  favorability <- get_favorability_map(scale_points)
 
   # Handle glint_survey objects
   if (inherits(survey, "glint_survey")) {

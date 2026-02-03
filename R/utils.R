@@ -78,3 +78,32 @@ get_standard_columns <- function() {
   c("First Name", "Last Name", "Email", "Status", "EMP ID", "Manager ID",
     "Survey Cycle Completion Date", "Survey Cycle Sent Date")
 }
+
+
+#' Get Favorability Map for Scale Points
+#'
+#' Returns the favorability classification for a given scale point count,
+#' based on Glint standards.
+#'
+#' @param scale_points Integer specifying the number of scale points (2-11)
+#'
+#' @return A list with three elements: favorable, neutral, and unfavorable,
+#'   each containing a vector of scale points classified into that category
+#'
+#' @keywords internal
+get_favorability_map <- function(scale_points) {
+  favorability_map <- list(
+    "2" = list(favorable = c(2), neutral = c(), unfavorable = c(1)),
+    "3" = list(favorable = c(3), neutral = c(2), unfavorable = c(1)),
+    "4" = list(favorable = c(4), neutral = c(2, 3), unfavorable = c(1)),
+    "5" = list(favorable = c(4, 5), neutral = c(3), unfavorable = c(1, 2)),
+    "6" = list(favorable = c(4, 5, 6), neutral = c(), unfavorable = c(1, 2, 3)),
+    "7" = list(favorable = c(6, 7), neutral = c(4, 5), unfavorable = c(1, 2, 3)),
+    "8" = list(favorable = c(6, 7, 8), neutral = c(4, 5), unfavorable = c(1, 2, 3)),
+    "9" = list(favorable = c(7, 8, 9), neutral = c(4, 5, 6), unfavorable = c(1, 2, 3)),
+    "10" = list(favorable = c(8, 9, 10), neutral = c(4, 5, 6, 7), unfavorable = c(1, 2, 3)),
+    "11" = list(favorable = c(10, 11), neutral = c(8, 9), unfavorable = c(1, 2, 3, 4, 5, 6, 7))
+  )
+
+  return(favorability_map[[as.character(scale_points)]])
+}

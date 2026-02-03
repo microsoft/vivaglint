@@ -4,6 +4,7 @@
 #' metrics as summarize_survey() for each manager's team.
 #'
 #' @param survey A glint_survey object or data frame containing survey data
+#' @param scale_points Integer specifying the number of scale points (2-11)
 #' @param full_tree Logical indicating whether to include full subtree
 #'   (all indirect reports) or only direct reports (default: FALSE)
 #'
@@ -23,12 +24,12 @@
 #' survey <- read_glint_survey("survey_export.csv")
 #'
 #' # Direct reports only
-#' manager_summary <- aggregate_by_manager(survey)
+#' manager_summary <- aggregate_by_manager(survey, scale_points = 5)
 #'
 #' # Full organizational tree
-#' manager_summary_full <- aggregate_by_manager(survey, full_tree = TRUE)
+#' manager_summary_full <- aggregate_by_manager(survey, scale_points = 5, full_tree = TRUE)
 #' }
-aggregate_by_manager <- function(survey, full_tree = FALSE) {
+aggregate_by_manager <- function(survey, scale_points, full_tree = FALSE) {
   # Handle glint_survey objects
   if (inherits(survey, "glint_survey")) {
     data <- survey$data
@@ -70,7 +71,7 @@ aggregate_by_manager <- function(survey, full_tree = FALSE) {
       dplyr::filter(`EMP ID` %in% team_members)
 
     # Analyze each question for this team
-    question_results <- summarize_survey(team_data, questions = "all")
+    question_results <- summarize_survey(team_data, scale_points = scale_points, questions = "all")
     question_results$manager_id <- mgr_id
     question_results$team_size <- length(team_members)
 

@@ -4,10 +4,12 @@
 \alias{summarize_survey}
 \title{Summarize Survey Questions}
 \usage{
-summarize_survey(survey, questions = "all")
+summarize_survey(survey, scale_points, questions = "all")
 }
 \arguments{
 \item{survey}{A glint_survey object or data frame containing survey data}
+
+\item{scale_points}{Integer specifying the number of scale points (2-11)}
 
 \item{questions}{Character vector of question text(s) to analyze, or "all" to
 analyze all questions (default: "all")}
@@ -22,22 +24,25 @@ A tibble with one row per question containing:
 \item{n_skips}{Count of blank or null responses}
 \item{n_total}{Total number of respondents}
 \item{response_rate}{Proportion of respondents who saw question (rounded to 2 decimal places)}
+\item{pct_favorable}{Percentage of responses classified as favorable}
+\item{pct_neutral}{Percentage of responses classified as neutral}
+\item{pct_unfavorable}{Percentage of responses classified as unfavorable}
 }
 }
 \description{
 Calculates comprehensive metrics for survey questions, returning a summary
 analysis in tidy format. This includes mean, standard deviation, response counts,
-skip counts, and response rates.
+skip counts, response rates, and favorability percentages.
 }
 \examples{
 \dontrun{
 survey <- read_glint_survey("survey_export.csv")
 
-# Summarize all questions
-summary <- summarize_survey(survey)
+# Summarize all questions (5-point scale)
+summary <- summarize_survey(survey, scale_points = 5)
 
 # Summarize specific questions
-summary_subset <- summarize_survey(survey,
+summary_subset <- summarize_survey(survey, scale_points = 5,
   questions = c("My work is meaningful", "I feel valued"))
 }
 }

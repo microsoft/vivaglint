@@ -4,10 +4,12 @@
 \alias{aggregate_by_manager}
 \title{Aggregate Responses by Manager}
 \usage{
-aggregate_by_manager(survey, full_tree = FALSE)
+aggregate_by_manager(survey, scale_points, full_tree = FALSE)
 }
 \arguments{
 \item{survey}{A glint_survey object or data frame containing survey data}
+
+\item{scale_points}{Integer specifying the number of scale points (2-11)}
 
 \item{full_tree}{Logical indicating whether to include full subtree
 (all indirect reports) or only direct reports (default: FALSE)}
@@ -31,9 +33,9 @@ metrics as summarize_survey() for each manager's team.
 survey <- read_glint_survey("survey_export.csv")
 
 # Direct reports only
-manager_summary <- aggregate_by_manager(survey)
+manager_summary <- aggregate_by_manager(survey, scale_points = 5)
 
 # Full organizational tree
-manager_summary_full <- aggregate_by_manager(survey, full_tree = TRUE)
+manager_summary_full <- aggregate_by_manager(survey, scale_points = 5, full_tree = TRUE)
 }
 }

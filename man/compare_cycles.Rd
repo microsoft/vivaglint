@@ -4,10 +4,12 @@
 \alias{compare_cycles}
 \title{Compare Survey Cycles}
 \usage{
-compare_cycles(..., cycle_names = NULL)
+compare_cycles(..., scale_points, cycle_names = NULL)
 }
 \arguments{
 \item{...}{Two or more glint_survey objects or data frames to compare}
+
+\item{scale_points}{Integer specifying the number of scale points (2-11)}
 
 \item{cycle_names}{Optional character vector of names for each cycle.
 If not provided, will use "Cycle 1", "Cycle 2", etc.}
@@ -33,6 +35,7 @@ survey2 <- read_glint_survey("survey_2023_q2.csv")
 survey3 <- read_glint_survey("survey_2023_q3.csv")
 
 comparison <- compare_cycles(survey1, survey2, survey3,
+                              scale_points = 5,
                               cycle_names = c("Q1 2023", "Q2 2023", "Q3 2023"))
 print(comparison)
 }
