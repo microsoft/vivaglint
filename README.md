@@ -68,6 +68,15 @@ attrition <- analyze_attrition(
   scale_points = 5,
   time_periods = c(30, 90, 180)
 )
+
+# 8. Analyze by attributes
+demo_results <- analyze_by_attributes(
+  survey,
+  attribute_file = "employee_attributes.csv",
+  scale_points = 5,
+  attribute_cols = c("Department", "Gender", "Tenure Group"),
+  min_group_size = 10
+)
 ```
 
 ## Key Functions
@@ -81,6 +90,7 @@ attrition <- analyze_attrition(
 | `get_correlations()` | Calculate inter-question correlations |
 | `extract_survey_factors()` | Perform factor analysis |
 | `analyze_attrition()` | Link survey responses to turnover |
+| `analyze_by_attributes()` | Aggregate results by attribute groups |
 | `pivot_long()` | Reshape data to long format |
 | `aggregate_by_manager()` | Roll up results by manager |
 

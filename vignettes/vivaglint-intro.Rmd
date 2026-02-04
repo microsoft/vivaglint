@@ -1,0 +1,252 @@
+---
+title: "Introduction to vivaglint"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction to vivaglint}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Overview
+
+**vivaglint** provides a comprehensive toolkit for analyzing Microsoft Viva Glint survey data exports. The package handles data import, validation, statistical analysis, and reporting with specialized functions for common survey analysis tasks.
+
+## Key Features
+
+- **Data Import & Validation**: Automatic validation of Glint export structure
+- **Summary Statistics**: Mean, SD, response rates, favorability percentages
+- **Multi-cycle Analysis**: Track changes over time
+- **Organizational Analysis**: Roll up results by manager hierarchy
+- **Advanced Analytics**: Correlation analysis, factor analysis, attrition prediction
+- **Demographic Segmentation**: Analyze results by any employee attributes
+
+## Getting Started
+
+### Installation
+
+```{r eval=FALSE}
+# Install from GitHub
+devtools::install_github("microsoft/vivaglint")
+
+# Load the package
+library(vivaglint)
+```
+
+### Basic Workflow
+
+#### 1. Import Survey Data
+
+The `read_glint_survey()` function imports and validates your Glint CSV export:
+
+```{r eval=FALSE}
+survey <- read_glint_survey("survey_export.csv")
+```
+
+This returns a `glint_survey` object containing:
+- **data**: The survey responses
+- **metadata**: Question names, respondent counts, etc.
+
+#### 2. Summarize Questions
+
+Calculate comprehensive metrics for all questions:
+
+```{r eval=FALSE}
+summary <- summarize_survey(survey, scale_points = 5)
+```
+
+This returns a tibble with one row per question containing:
+- `mean` - Average response score
+- `sd` - Standard deviation
+- `n_responses` - Number of responses
+- `response_rate` - Response rate (0-1)
+- `pct_favorable` - Percentage of favorable responses
+- `pct_neutral` - Percentage of neutral responses
+- `pct_unfavorable` - Percentage of unfavorable responses
+
+**Favorability Classification**: The package uses Glint's standard favorability mappings for 2-11 point scales. For example, on a 5-point scale, responses of 4 or 5 are favorable, 3 is neutral, and 1-2 are unfavorable.
+
+#### 3. Analyze Specific Questions
+
+Focus on particular questions of interest:
+
+```{r eval=FALSE}
+engagement_qs <- c("My work is meaningful", "I feel valued at work")
+result <- summarize_survey(survey,
+                           scale_points = 5,
+                           questions = engagement_qs)
+```
+
+#### 4. Get Response Distributions
+
+See the detailed breakdown of response values:
+
+```{r eval=FALSE}
+distributions <- get_response_dist(survey)
+```
+
+This expands value counts into separate columns like `count_1`, `count_2`, `pct_1`, `pct_2`, etc.
+
+## Multi-Cycle Comparisons
+
+Track how scores change across survey cycles:
+
+```{r eval=FALSE}
+# Load multiple survey cycles
+survey_q1 <- read_glint_survey("2024_Q1.csv")
+survey_q2 <- read_glint_survey("2024_Q2.csv")
+survey_q3 <- read_glint_survey("2024_Q3.csv")
+
+# Compare across cycles
+comparison <- compare_cycles(survey_q1, survey_q2, survey_q3,
+                             scale_points = 5,
+                             cycle_names = c("Q1 2024", "Q2 2024", "Q3 2024"))
+```
+
+The output includes:
+- All metrics from `summarize_survey()` for each cycle
+- `change_from_previous` - Change in mean score
+- `pct_change_from_previous` - Percentage change
+
+## Organizational Analysis
+
+### Aggregate by Manager
+
+Roll up survey results to manager level:
+
+```{r eval=FALSE}
+# Direct reports only
+manager_summary <- aggregate_by_manager(survey, scale_points = 5)
+
+# Include full organizational tree
+manager_full <- aggregate_by_manager(survey,
+                                     scale_points = 5,
+                                     full_tree = TRUE)
+```
+
+Returns metrics for each manager's team including:
+- `manager_id` and `manager_name`
+- `team_size` - Number of team members
+- All standard survey metrics
+
+## Advanced Analytics
+
+### Correlation Analysis
+
+Examine relationships between questions:
+
+```{r eval=FALSE}
+# Calculate correlations (default: Spearman)
+correlations <- get_correlations(survey, method = "spearman")
+
+# Get correlation matrix instead of long format
+cor_matrix <- get_correlations(survey, format = "matrix")
+```
+
+Supported methods: Spearman, Pearson, Kendall
+
+### Factor Analysis
+
+Identify latent constructs in your survey:
+
+```{r eval=FALSE}
+# Requires psych package
+factors <- extract_survey_factors(survey,
+                                  n_factors = 3,
+                                  rotation = "oblimin")
+
+# View loadings
+print(factors$loadings_clean)
+
+# View variance explained
+print(factors$variance_explained)
+```
+
+### Attrition Analysis
+
+Link survey responses to employee turnover:
+
+```{r eval=FALSE}
+attrition <- analyze_attrition(
+  survey,
+  attrition_file = "employee_attributes.csv",
+  emp_id_col = "EMP ID",
+  term_date_col = "Termination Date",
+  scale_points = 5,
+  time_periods = c(30, 90, 180)  # days
+)
+```
+
+Returns attrition rates for favorable vs unfavorable responders with risk ratios.
+
+### Demographic Analysis
+
+Segment results by employee attributes:
+
+```{r eval=FALSE}
+demo_results <- analyze_by_attributes(
+  survey,
+  attribute_file = "employee_attributes.csv",
+  scale_points = 5,
+  attribute_cols = c("Department", "Gender", "Tenure Group"),
+  min_group_size = 10  # Privacy threshold
+)
+```
+
+Analyzes survey results for all combinations of the specified attributes, filtering out groups below the minimum size threshold.
+
+## Data Reshaping
+
+Convert to long format for custom analysis:
+
+```{r eval=FALSE}
+# All responses in long format
+long_data <- pivot_long(survey, data_type = "all")
+
+# Comments only
+comments_data <- pivot_long(survey, data_type = "comments")
+
+# Both as separate tibbles
+both <- pivot_long(survey, data_type = "both")
+long_responses <- both$responses
+long_comments <- both$comments
+```
+
+## Best Practices
+
+### Privacy Protection
+
+- Use `min_group_size` parameters to prevent identification of small groups
+- Default minimum is 5 employees per group
+- Consider higher thresholds (10-15) for sensitive analyses
+
+### Scale Points
+
+Always specify the correct `scale_points` parameter:
+- Common scales: 2, 3, 5, 7, 10, 11
+- Determines favorability classification
+- Critical for accurate reporting
+
+### Data Quality
+
+The package validates:
+- Required column structure
+- Date formats
+- Question completeness
+- Provides informative error messages for data issues
+
+## Additional Resources
+
+- **Function Documentation**: `?read_glint_survey`, `?summarize_survey`, etc.
+- **GitHub**: https://github.com/microsoft/vivaglint
+- **Issues**: https://github.com/microsoft/vivaglint/issues
+
+## Data Privacy
+
+This package processes all data locally within your R environment. No data is transmitted to external services, including Microsoft. Always follow your organization's data handling policies when working with employee survey data.

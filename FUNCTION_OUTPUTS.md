@@ -424,19 +424,132 @@ manager_filtered <- aggregate_by_manager(survey, min_team_size = 3)
 
 ---
 
+## 11. analyze_by_attributes()
+
+**Returns:** A tibble with one row per demographic-group-question combination
+
+```r
+attr_analysis <- analyze_by_attributes(
+  survey,
+  attribute_file = "tests/testthat/fixtures/employee_attributes.csv",
+  scale_points = 5,
+  attribute_cols = c("Department", "Gender"),
+  min_group_size = 10
+)
+```
+
+**Output Structure:**
+```r
+# A tibble: 180 × 13
+   Department  Gender group_size question           mean    sd n_responses n_skips
+   <chr>       <chr>       <int> <chr>             <dbl> <dbl>       <int>   <int>
+ 1 Engineering Female        937 My work is mean…   3.52  1.10         894      43
+ 2 Engineering Female        937 I feel valued      3.59  1.09         893      44
+ 3 Engineering Female        937 I have opportun…   3.59  1.07         906      31
+ 4 Engineering Male          974 My work is mean…   3.59  1.07         919      55
+ 5 Engineering Male          974 I feel valued      3.57  1.11         920      54
+# … with 175 more rows, and 5 more variables: n_total <int>,
+#   response_rate <dbl>, pct_favorable <dbl>, pct_neutral <dbl>,
+#   pct_unfavorable <dbl>
+```
+
+**Column Descriptions:**
+- **Demographic columns** (e.g., Department, Gender): The grouping variables specified in `attribute_cols`
+- **group_size**: Number of employees in this demographic combination
+- **question**: The question text
+- **mean, sd, n_responses, n_skips, n_total, response_rate**: Standard survey metrics from `summarize_survey()`
+- **pct_favorable, pct_neutral, pct_unfavorable**: Favorability percentages based on scale
+
+**Usage Notes:**
+- Only attribute groups with at least `min_group_size` employees are included
+- The attribute file must contain the `emp_id_col` and all `attribute_cols`
+- Returns empty tibble with warning if no groups meet the minimum size threshold
+- Can analyze any number of demographic variables simultaneously
+
+**Example: Find lowest scoring attribute groups**
+```r
+attr_analysis %>%
+  filter(question == "My work is meaningful") %>%
+  arrange(mean) %>%
+  select(Department, Gender, group_size, mean, pct_favorable)
+```
+
+---
+
+## 12. analyze_attrition()
+
+**Returns:** A tibble with one row per question-time period combination
+
+```r
+attrition <- analyze_attrition(
+  survey,
+  attrition_file = "tests/testthat/fixtures/large_attrition.csv",
+  emp_id_col = "EMP ID",
+  term_date_col = "Termination Date",
+  scale_points = 5,
+  time_periods = c(30, 90, 180)
+)
+```
+
+**Output Structure:**
+```r
+# A tibble: 36 × 7
+   question                  days favorable_n favorable_attrition unfavorable_n
+   <chr>                    <dbl>       <int>               <dbl>         <int>
+ 1 My work is meaningful       30        2251              0.0262          1498
+ 2 My work is meaningful       90        2251              0.0697          1498
+ 3 My work is meaningful      180        2251              0.1113          1498
+ 4 I feel valued               30        2274              0.0281          1506
+ 5 I feel valued               90        2274              0.0665          1506
+# … with 31 more rows, and 2 more variables: unfavorable_attrition <dbl>,
+#   attrition_ratio <dbl>
+```
+
+**Column Descriptions:**
+- **question**: The survey question text
+- **days**: Time period (days after survey completion) for attrition calculation
+- **favorable_n**: Number of employees who gave favorable responses
+- **favorable_attrition**: Proportion of favorable responders who left within the time period
+- **unfavorable_n**: Number of employees who gave unfavorable responses
+- **unfavorable_attrition**: Proportion of unfavorable responders who left within the time period
+- **attrition_ratio**: Risk ratio (unfavorable_attrition / favorable_attrition)
+  - Values > 1 indicate higher attrition among unfavorable responders
+  - Values < 1 indicate higher attrition among favorable responders
+  - Inf indicates no attrition in favorable group but attrition in unfavorable group
+  - NA indicates insufficient data for comparison
+
+**Usage Notes:**
+- Responses are classified as favorable/unfavorable based on the scale's favorability map
+- Neutral responses are excluded from the analysis
+- The attribute file must contain `emp_id_col` and `term_date_col`
+- Termination dates are automatically parsed from common formats
+- Attrition is calculated from survey completion date to termination date
+
+**Example: Find questions with highest 90-day attrition risk**
+```r
+attrition %>%
+  filter(days == 90) %>%
+  arrange(desc(attrition_ratio)) %>%
+  select(question, favorable_attrition, unfavorable_attrition, attrition_ratio)
+```
+
+---
+
 ## Summary of Return Types
 
 | Function | Return Type | Dimensions (typical) |
 |----------|-------------|----------------------|
 | `read_glint_survey()` | List (glint_survey) | data: n×(8+4q), metadata: list |
 | `extract_questions()` | Tibble | q×5 |
-| `summarize_survey()` | Tibble | q×7 |
+| `summarize_survey()` | Tibble | q×10 |
 | `get_response_dist()` | Tibble | q×(1+2v) |
-| `compare_cycles()` | Tibble | (q×c)×11 |
+| `compare_cycles()` | Tibble | (q×c)×13 |
 | `get_correlations()` | Tibble or Matrix | q²×5 or q×q |
 | `extract_survey_factors()` | List (survey_factors) | list with 6 components |
 | `pivot_long()` | Tibble or List | (n×q)×13 or list of 2 tibbles |
-| `aggregate_by_manager()` | Tibble | (m×q)×11 |
+| `aggregate_by_manager()` | Tibble | (m×q)×14 |
+| `analyze_by_attributes()` | Tibble | (d×q)×(13+k) |
+| `analyze_attrition()` | Tibble | (q×t)×7 |
 
 **Legend:**
 - n = number of respondents
@@ -444,6 +557,9 @@ manager_filtered <- aggregate_by_manager(survey, min_team_size = 3)
 - m = number of managers
 - c = number of cycles
 - v = number of unique response values
+- d = number of demographic group combinations
+- k = number of demographic columns
+- t = number of time periods
 
 ---
 

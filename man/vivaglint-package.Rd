@@ -8,8 +8,16 @@
 \description{
 Provides functions for importing, validating, and analyzing Viva Glint survey data exports. Includes tools for data reshaping, question-level analysis, multi-cycle comparisons, and organizational hierarchy analysis.
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/microsoft/vivaglint}
+  \item Report bugs at \url{https://github.com/microsoft/vivaglint/issues}
+}
+
+}
 \author{
-\strong{Maintainer}: Eric Knudsen \email{ericknudsen@example.com}
+\strong{Maintainer}: Eric Knudsen \email{ericknudsen@microsoft.com}
 
 }
 \keyword{internal}

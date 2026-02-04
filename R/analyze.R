@@ -815,6 +815,158 @@ analyze_attrition <- function(survey, attrition_file, emp_id_col, term_date_col,
 }
 
 
+#' Analyze Survey Responses by Attributes
+#'
+#' Aggregates survey responses by employee attributes (e.g., Department,
+#' Gender, Tenure) and calculates the same metrics as summarize_survey() for
+#' each attribute group combination. Only groups meeting the minimum size
+#' threshold are included in the results.
+#'
+#' @param survey A glint_survey object or data frame containing survey data
+#' @param attribute_file Character string path to CSV file containing employee
+#'   attributes
+#' @param scale_points Integer specifying the number of scale points (2-11)
+#' @param attribute_cols Character vector of column names from the attribute
+#'   file to group by (e.g., c("Department", "Gender", "Tenure Group"))
+#' @param emp_id_col Character string specifying the employee ID column name
+#'   in the attribute file (default: "EMP ID")
+#' @param min_group_size Integer specifying the minimum number of employees
+#'   required for an attribute group to be included in results (default: 5)
+#'
+#' @return A tibble with one row per attribute-group-question combination
+#'   containing:
+#'   \describe{
+#'     \item{attribute columns}{Values for each attribute grouping variable}
+#'     \item{group_size}{Number of employees in this attribute group}
+#'     \item{All columns from summarize_survey()}{question, n_responses, n_skips,
+#'       n_total, response_rate, mean, sd, pct_favorable, pct_neutral,
+#'       pct_unfavorable}
+#'   }
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' survey <- read_glint_survey("survey_export.csv")
+#'
+#' # Analyze by single attribute
+#' dept_analysis <- analyze_by_attributes(
+#'   survey,
+#'   attribute_file = "employee_attributes.csv",
+#'   scale_points = 5,
+#'   attribute_cols = "Department"
+#' )
+#'
+#' # Analyze by multiple attributes
+#' multi_analysis <- analyze_by_attributes(
+#'   survey,
+#'   attribute_file = "employee_attributes.csv",
+#'   scale_points = 5,
+#'   attribute_cols = c("Department", "Gender", "Tenure Group"),
+#'   min_group_size = 10
+#' )
+#' }
+analyze_by_attributes <- function(survey, attribute_file, scale_points,
+                                 attribute_cols, emp_id_col = "EMP ID",
+                                 min_group_size = 5) {
+  # Validate scale_points
+  if (!scale_points %in% 2:11) {
+    stop("scale_points must be an integer between 2 and 11")
+  }
+
+  # Handle glint_survey objects
+  if (inherits(survey, "glint_survey")) {
+    survey_data <- survey$data
+  } else {
+    survey_data <- survey
+  }
+
+  # Read attribute file
+  if (!file.exists(attribute_file)) {
+    stop(paste0("Attribute file not found: ", attribute_file))
+  }
+
+  attributes <- readr::read_csv(
+    attribute_file,
+    show_col_types = FALSE,
+    col_types = readr::cols(.default = readr::col_character())
+  )
+
+  # Validate emp_id_col exists in attribute file
+  if (!emp_id_col %in% names(attributes)) {
+    stop(paste0("Column '", emp_id_col, "' not found in attribute file"))
+  }
+
+  # Validate attribute_cols exist in attribute file
+  missing_cols <- setdiff(attribute_cols, names(attributes))
+  if (length(missing_cols) > 0) {
+    stop(paste0(
+      "Attribute column(s) not found in attribute file: ",
+      paste(missing_cols, collapse = ", ")
+    ))
+  }
+
+  # Join survey data with attributes
+  combined_data <- survey_data %>%
+    dplyr::left_join(
+      attributes %>% dplyr::select(dplyr::all_of(c(emp_id_col, attribute_cols))),
+      by = c("EMP ID" = emp_id_col)
+    )
+
+  # Get all unique attribute combinations
+  attribute_groups <- combined_data %>%
+    dplyr::select(dplyr::all_of(attribute_cols), `EMP ID`) %>%
+    dplyr::distinct() %>%
+    dplyr::group_by(dplyr::across(dplyr::all_of(attribute_cols))) %>%
+    dplyr::summarise(
+      group_size = dplyr::n(),
+      .groups = "drop"
+    ) %>%
+    dplyr::filter(group_size >= min_group_size)
+
+  if (nrow(attribute_groups) == 0) {
+    warning("No attribute groups meet the minimum size threshold")
+    return(dplyr::tibble())
+  }
+
+  # Get question columns (excluding attributes and standard columns)
+  standard_cols <- get_standard_columns()
+  all_cols <- names(survey_data)
+  question_cols <- setdiff(all_cols, standard_cols)
+
+  # Analyze each attribute group
+  results <- purrr::map_dfr(seq_len(nrow(attribute_groups)), function(i) {
+    group_values <- attribute_groups[i, attribute_cols, drop = FALSE]
+    group_size <- attribute_groups$group_size[i]
+
+    # Filter survey data to this attribute group
+    group_data <- combined_data
+    for (col in attribute_cols) {
+      group_data <- group_data %>%
+        dplyr::filter(!!rlang::sym(col) == group_values[[col]])
+    }
+
+    # Select only the original survey columns (remove attribute columns)
+    group_data_survey <- group_data %>%
+      dplyr::select(dplyr::all_of(c(standard_cols, question_cols)))
+
+    # Run summarize_survey for this group
+    group_summary <- summarize_survey(group_data_survey, scale_points = scale_points, questions = "all")
+
+    # Add attribute columns and group size
+    group_summary <- dplyr::bind_cols(
+      group_values,
+      dplyr::tibble(group_size = group_size),
+      group_summary
+    )
+
+    return(group_summary)
+  })
+
+  return(results)
+}
+
+
 # Define the %||% operator for use in expand_value_distributions
 `%||%` <- function(x, y) {
   if (is.null(x)) y else x

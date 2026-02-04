@@ -54,6 +54,32 @@ cor_matrix <- get_correlations(survey, format = "matrix")
 # Factor analysis (requires psych package)
 factors <- extract_survey_factors(survey, n_factors = 2, rotation = "oblimin")
 # Returns: list with loadings, variance_explained, communalities, etc.
+
+# Analyze by demographics (requires attribute file)
+attr_analysis <- analyze_by_attributes(
+  survey,
+  attribute_file = "employee_attributes.csv",
+  scale_points = 5,
+  attribute_cols = c("Department", "Gender", "Tenure Group"),
+  min_group_size = 10
+)
+# Returns: d×q rows × 13+ columns (d = attribute combinations, q = questions)
+# Columns: [demographic cols], group_size, question, mean, sd, n_responses,
+#          n_skips, n_total, response_rate, pct_favorable, pct_neutral,
+#          pct_unfavorable
+
+# Analyze attrition risk by survey responses
+attrition <- analyze_attrition(
+  survey,
+  attrition_file = "employee_attributes.csv",
+  emp_id_col = "EMP ID",
+  term_date_col = "Termination Date",
+  scale_points = 5,
+  time_periods = c(30, 90, 180)
+)
+# Returns: q×t rows × 7 columns (q = questions, t = time periods)
+# Columns: question, days, favorable_n, favorable_attrition,
+#          unfavorable_n, unfavorable_attrition, attrition_ratio
 ```
 
 ### 🔄 Reshape Functions
@@ -115,6 +141,25 @@ cor_matrix <- get_correlations(survey, format = "matrix")
 
 # 8. Factor analysis
 factors <- extract_survey_factors(survey, rotation = "oblimin")
+
+# 9. Demographic analysis
+attr_analysis <- analyze_by_attributes(
+  survey,
+  attribute_file = "employee_attributes.csv",
+  scale_points = 5,
+  attribute_cols = c("Department", "Gender"),
+  min_group_size = 10
+)
+
+# 10. Attrition analysis
+attrition <- analyze_attrition(
+  survey,
+  attrition_file = "employee_attributes.csv",
+  emp_id_col = "EMP ID",
+  term_date_col = "Termination Date",
+  scale_points = 5,
+  time_periods = c(30, 90, 180)
+)
 ```
 
 ## Key Metrics Explained
@@ -179,19 +224,55 @@ comments <- pivot_comments_long(survey) %>%
   arrange(desc(sensitive_flag))
 ```
 
+### Compare scores across attribute groups
+```r
+attr_analysis <- analyze_by_attributes(
+  survey,
+  attribute_file = "employee_attributes.csv",
+  scale_points = 5,
+  attribute_cols = c("Department", "Gender"),
+  min_group_size = 10
+)
+
+# Find lowest scoring attribute groups
+low_scores <- attr_analysis %>%
+  filter(question == "My work is meaningful") %>%
+  arrange(mean) %>%
+  select(Department, Gender, group_size, mean, pct_favorable)
+```
+
+### Identify attrition risk by question
+```r
+attrition <- analyze_attrition(
+  survey,
+  attrition_file = "employee_attributes.csv",
+  emp_id_col = "EMP ID",
+  term_date_col = "Termination Date",
+  scale_points = 5,
+  time_periods = c(30, 90, 180)
+)
+
+# Find questions with highest attrition risk ratios
+high_risk <- attrition %>%
+  filter(days == 90) %>%
+  arrange(desc(attrition_ratio))
+```
+
 ## Data Dimensions Reference
 
 | Function | Input | Output Rows | Output Cols |
 |----------|-------|-------------|-------------|
 | `read_glint_survey()` | CSV | n | 8 + 4q |
 | `extract_questions()` | survey | q | 5 |
-| `summarize_survey()` | survey | q | 7 |
+| `summarize_survey()` | survey | q | 10 |
 | `get_response_dist()` | survey | q | 1 + 2v |
-| `compare_cycles()` | multiple surveys | q×c | 11 |
+| `compare_cycles()` | multiple surveys | q×c | 13 |
 | `pivot_long()` | survey | n×q or varies | 13 |
-| `aggregate_by_manager()` | survey | m×q | 11 |
+| `aggregate_by_manager()` | survey | m×q | 14 |
 | `get_correlations()` | survey | q×q | 5 or matrix |
 | `extract_survey_factors()` | survey | list | N/A |
+| `analyze_by_attributes()` | survey + attributes | d×q | 13+ |
+| `analyze_attrition()` | survey + attributes | q×t | 7 |
 
 **Legend:**
 - n = respondents
@@ -199,6 +280,8 @@ comments <- pivot_comments_long(survey) %>%
 - m = managers (with teams ≥ min_size)
 - c = cycles
 - v = unique response values
+- d = demographic group combinations (meeting min_group_size)
+- t = time periods
 
 ## Error Messages
 

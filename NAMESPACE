@@ -2,6 +2,7 @@
 
 export(aggregate_by_manager)
 export(analyze_attrition)
+export(analyze_by_attributes)
 export(compare_cycles)
 export(extract_questions)
 export(extract_survey_factors)

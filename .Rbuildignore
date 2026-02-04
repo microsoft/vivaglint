@@ -3,3 +3,9 @@
 ^data-raw$
 ^\.git$
 ^\.gitignore$
+^\.claude$
+^QUICK_REFERENCE\.md$
+^FUNCTION_OUTPUTS\.md$
+^PACKAGE_USAGE\.md$
+^demo\.R$
+^cran-comments\.md$
