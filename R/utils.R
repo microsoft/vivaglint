@@ -34,7 +34,6 @@ parse_comment_topics <- function(topics, return_format = "list") {
     stop("return_format must be either 'list' or 'tidy'")
   }
 
-  # Handle NA and empty strings
   topics <- ifelse(is.na(topics) | topics == "", NA_character_, topics)
 
   # Split by comma and trim whitespace
@@ -64,6 +63,23 @@ parse_comment_topics <- function(topics, return_format = "list") {
     )
     return(result)
   }
+}
+
+
+#' Convert Raw Mean to Glint Score
+#'
+#' Transforms a raw mean response on a rating scale to the 100-point Glint Score
+#' as displayed in the Viva Glint UI. Rounded to the nearest whole number, consistent
+#' with Glint's rounding convention.
+#'
+#' @param mean_val Numeric raw mean value
+#' @param scale_points Integer number of scale points (2-11)
+#'
+#' @return Numeric Glint Score on a 0-100 scale
+#'
+#' @keywords internal
+mean_to_glint_score <- function(mean_val, scale_points) {
+  round(((mean_val - 1) / (scale_points - 1)) * 100)
 }
 
 

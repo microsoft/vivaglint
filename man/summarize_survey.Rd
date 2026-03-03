@@ -18,12 +18,13 @@ analyze all questions (default: "all")}
 A tibble with one row per question containing:
 \describe{
 \item{question}{The question text}
-\item{mean}{Mean of numeric responses}
+\item{mean}{Mean of numeric responses (raw scale)}
 \item{sd}{Standard deviation of numeric responses}
+\item{glint_score}{Mean transformed to a 0-100 scale, matching the score
+displayed in the Viva Glint UI: \code{round(((mean - 1) / (scale_points - 1)) * 100)}}
 \item{n_responses}{Count of non-blank, non-null responses}
 \item{n_skips}{Count of blank or null responses}
 \item{n_total}{Total number of respondents}
-\item{response_rate}{Proportion of respondents who saw question (rounded to 2 decimal places)}
 \item{pct_favorable}{Percentage of responses classified as favorable}
 \item{pct_neutral}{Percentage of responses classified as neutral}
 \item{pct_unfavorable}{Percentage of responses classified as unfavorable}
@@ -31,8 +32,8 @@ A tibble with one row per question containing:
 }
 \description{
 Calculates comprehensive metrics for survey questions, returning a summary
-analysis in tidy format. This includes mean, standard deviation, response counts,
-skip counts, response rates, and favorability percentages.
+analysis in tidy format. This includes mean, standard deviation, Glint Score,
+response counts, skip counts, and favorability percentages.
 }
 \examples{
 \dontrun{

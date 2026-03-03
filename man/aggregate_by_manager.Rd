@@ -18,10 +18,14 @@ aggregate_by_manager(survey, scale_points, full_tree = FALSE)
 A tibble with one row per manager-question combination containing:
 \describe{
 \item{manager_id}{The manager's employee ID}
-\item{manager_name}{The manager's full name}
+\item{manager_name}{The manager's full name (First Name + Last Name)}
 \item{question}{The question text}
-\item{team_size}{Number of employees in the team (direct or full tree)}
-\item{All metrics from summarize_survey()}{}
+\item{team_size}{Number of employees in the team (direct reports only, or
+full subtree when \code{full_tree = TRUE})}
+\item{mean, sd, glint_score, n_responses, n_skips, n_total}{Descriptive
+statistics for this manager's team on this question}
+\item{pct_favorable, pct_neutral, pct_unfavorable}{Favorability
+percentages for this manager's team on this question}
 }
 }
 \description{

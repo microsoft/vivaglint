@@ -1,4 +1,4 @@
-test_that("analyze_by_attributes requires attribute file", {
+test_that("analyze_by_attributes errors on nonexistent attribute_file", {
   survey <- read_glint_survey("fixtures/sample_survey.csv")
 
   expect_error(
@@ -33,7 +33,7 @@ test_that("analyze_by_attributes validates emp_id_col", {
       attribute_cols = "Department",
       emp_id_col = "EMP ID"
     ),
-    "Column 'EMP ID' not found in attribute file"
+    "Column 'EMP ID' not found in attribute data"
   )
 
   unlink(attr_file)
@@ -59,7 +59,7 @@ test_that("analyze_by_attributes validates attribute_cols", {
       scale_points = 5,
       attribute_cols = c("Department", "Gender")
     ),
-    "Attribute column\\(s\\) not found in attribute file: Gender"
+    "Attribute column\\(s\\) not found in survey data: Gender"
   )
 
   unlink(attr_file)
@@ -215,4 +215,141 @@ test_that("analyze_by_attributes warns when no groups meet threshold", {
   expect_equal(nrow(result), 0)
 
   unlink(attr_file)
+})
+
+test_that("analyze_by_attributes works with pre-joined survey (no attribute_file)", {
+  survey <- read_glint_survey("fixtures/sample_survey.csv")
+
+  attr_file <- tempfile(fileext = ".csv")
+  readr::write_csv(
+    dplyr::tibble(
+      `EMP ID` = c("e001", "e002", "e003", "e004", "e005"),
+      Department = c("Sales", "Sales", "Engineering", "Engineering", "Engineering")
+    ),
+    attr_file
+  )
+
+  survey_enriched <- join_attributes(survey, attr_file)
+
+  result <- analyze_by_attributes(
+    survey_enriched,
+    scale_points = 5,
+    attribute_cols = "Department",
+    min_group_size = 2
+  )
+
+  expect_s3_class(result, "tbl_df")
+  expect_true("Department" %in% names(result))
+  expect_equal(nrow(result), 4)  # 2 departments × 2 questions
+
+  unlink(attr_file)
+})
+
+test_that("join_attributes loads from file path", {
+  survey <- read_glint_survey("fixtures/sample_survey.csv")
+
+  attr_file <- tempfile(fileext = ".csv")
+  readr::write_csv(
+    dplyr::tibble(
+      `EMP ID` = c("e001", "e002", "e003", "e004", "e005"),
+      Department = c("Sales", "Sales", "Engineering", "Engineering", "HR")
+    ),
+    attr_file
+  )
+
+  result <- join_attributes(survey, attr_file)
+
+  expect_s3_class(result, "glint_survey")
+  expect_true("Department" %in% names(result$data))
+  expect_true("Department" %in% result$metadata$attribute_cols)
+
+  unlink(attr_file)
+})
+
+test_that("join_attributes loads from data frame", {
+  survey <- read_glint_survey("fixtures/sample_survey.csv")
+
+  attrs <- dplyr::tibble(
+    `EMP ID` = c("e001", "e002", "e003", "e004", "e005"),
+    Department = c("Sales", "Sales", "Engineering", "Engineering", "HR")
+  )
+
+  result <- join_attributes(survey, attrs)
+
+  expect_s3_class(result, "glint_survey")
+  expect_true("Department" %in% names(result$data))
+  expect_true("Department" %in% result$metadata$attribute_cols)
+})
+
+test_that("join_attributes errors on nonexistent file", {
+  survey <- read_glint_survey("fixtures/sample_survey.csv")
+
+  expect_error(
+    join_attributes(survey, "nonexistent_file.csv"),
+    "Attribute file not found"
+  )
+})
+
+test_that("join_attributes errors when emp_id_col missing from attribute data", {
+  survey <- read_glint_survey("fixtures/sample_survey.csv")
+
+  attrs <- dplyr::tibble(
+    `Wrong ID` = c("e001", "e002", "e003", "e004", "e005"),
+    Department = c("Sales", "Sales", "Engineering", "Engineering", "HR")
+  )
+
+  expect_error(
+    join_attributes(survey, attrs, emp_id_col = "EMP ID"),
+    "Column 'EMP ID' not found in attribute data"
+  )
+})
+
+test_that("join_attributes warns on column overlap", {
+  survey <- read_glint_survey("fixtures/sample_survey.csv")
+
+  # Pre-join once so Department already exists
+  attrs <- dplyr::tibble(
+    `EMP ID` = c("e001", "e002", "e003", "e004", "e005"),
+    Department = c("Sales", "Sales", "Engineering", "Engineering", "HR")
+  )
+  survey_enriched <- join_attributes(survey, attrs)
+
+  # Join again with the same column
+  expect_warning(
+    join_attributes(survey_enriched, attrs),
+    "already exist in the survey data and will be overwritten"
+  )
+})
+
+test_that("join_attributes messages on unmatched respondents", {
+  survey <- read_glint_survey("fixtures/sample_survey.csv")
+
+  # Only 3 of 5 employees in attribute data
+  attrs <- dplyr::tibble(
+    `EMP ID` = c("e001", "e002", "e003"),
+    Department = c("Sales", "Sales", "Engineering")
+  )
+
+  expect_message(
+    join_attributes(survey, attrs),
+    "had no match in the attribute data"
+  )
+})
+
+test_that("join_attributes accumulates attribute_cols across multiple joins", {
+  survey <- read_glint_survey("fixtures/sample_survey.csv")
+
+  attrs1 <- dplyr::tibble(
+    `EMP ID` = c("e001", "e002", "e003", "e004", "e005"),
+    Department = c("Sales", "Sales", "Engineering", "Engineering", "HR")
+  )
+  attrs2 <- dplyr::tibble(
+    `EMP ID` = c("e001", "e002", "e003", "e004", "e005"),
+    Gender = c("Male", "Female", "Male", "Female", "Male")
+  )
+
+  survey_enriched <- join_attributes(survey, attrs1)
+  survey_enriched <- join_attributes(survey_enriched, attrs2)
+
+  expect_true(all(c("Department", "Gender") %in% survey_enriched$metadata$attribute_cols))
 })

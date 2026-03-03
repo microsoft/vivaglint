@@ -6,7 +6,7 @@
 \usage{
 get_correlations(
   survey,
-  method = "spearman",
+  method = "pearson",
   format = "long",
   use = "pairwise.complete.obs"
 )
@@ -14,8 +14,8 @@ get_correlations(
 \arguments{
 \item{survey}{A glint_survey object or data frame containing survey data}
 
-\item{method}{Character string indicating the correlation method: "spearman"
-(default), "pearson", or "kendall"}
+\item{method}{Character string indicating the correlation method: "pearson"
+(default), "spearman", or "kendall"}
 
 \item{format}{Character string indicating output format: "long" for long format
 with one row per question pair (default), or "matrix" for traditional
@@ -43,11 +43,11 @@ Supports multiple correlation methods and output formats.
 \dontrun{
 survey <- read_glint_survey("survey_export.csv")
 
-# Get correlations in long format (default)
+# Get Pearson correlations in long format (default)
 correlations <- get_correlations(survey)
 
-# Get Pearson correlations
-correlations_pearson <- get_correlations(survey, method = "pearson")
+# Get Spearman correlations
+correlations_spearman <- get_correlations(survey, method = "spearman")
 
 # Get correlation matrix
 cor_matrix <- get_correlations(survey, format = "matrix")

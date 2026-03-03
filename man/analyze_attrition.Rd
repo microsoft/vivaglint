@@ -10,7 +10,9 @@ analyze_attrition(
   emp_id_col,
   term_date_col,
   scale_points,
-  time_periods = c(30, 90, 180)
+  time_periods = c(90, 180, 365),
+  attribute_cols = NULL,
+  min_group_size = 5
 )
 }
 \arguments{
@@ -25,11 +27,25 @@ analyze_attrition(
 \item{scale_points}{Integer specifying the number of scale points (2-11)}
 
 \item{time_periods}{Integer vector specifying time periods in days to analyze
-(default: c(30, 90, 180))}
+(default: c(90, 180, 365))}
+
+\item{attribute_cols}{Optional character vector of attribute column names to
+segment results by (e.g., \code{c("Department", "Gender")}). Attributes must
+already be joined to the survey via \code{join_attributes()}. When \code{NULL}
+(default), results are returned for the overall population.}
+
+\item{min_group_size}{Minimum number of employees required in an attribute group
+for it to be included in results (default: 5). Ignored when
+\code{attribute_cols = NULL}.}
 }
 \value{
-A tibble with one row per question-time period combination containing:
+A tibble with one row per (attribute group)-question-time period
+combination containing:
 \describe{
+\item{attribute columns}{One column per entry in \code{attribute_cols}
+(only present when \code{attribute_cols} is supplied)}
+\item{group_size}{Number of employees in the attribute group (only present
+when \code{attribute_cols} is supplied)}
 \item{question}{The question text}
 \item{days}{The time period in days}
 \item{favorable_n}{Number of employees who responded favorably}
@@ -48,15 +64,25 @@ specified time periods if they respond unfavorably vs favorably to survey questi
 \dontrun{
 survey <- read_glint_survey("survey_export.csv")
 
-# Analyze attrition for 5-point scale survey
+# Overall attrition analysis
 attrition <- analyze_attrition(
   survey,
-  attrition_file = "employee_attributes.csv",
+  attrition_file = "attrition.csv",
+  emp_id_col = "EMP ID",
+  term_date_col = "Termination Date",
+  scale_points = 5
+)
+
+# Attrition segmented by Department and Gender
+survey_enriched <- join_attributes(survey, "employee_attributes.csv")
+attrition_by_dept <- analyze_attrition(
+  survey_enriched,
+  attrition_file = "attrition.csv",
   emp_id_col = "EMP ID",
   term_date_col = "Termination Date",
   scale_points = 5,
-  time_periods = c(30, 90, 180)
+  attribute_cols = c("Department", "Gender"),
+  min_group_size = 10
 )
-print(attrition)
 }
 }

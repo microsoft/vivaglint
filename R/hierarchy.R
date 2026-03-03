@@ -11,10 +11,14 @@
 #' @return A tibble with one row per manager-question combination containing:
 #'   \describe{
 #'     \item{manager_id}{The manager's employee ID}
-#'     \item{manager_name}{The manager's full name}
+#'     \item{manager_name}{The manager's full name (First Name + Last Name)}
 #'     \item{question}{The question text}
-#'     \item{team_size}{Number of employees in the team (direct or full tree)}
-#'     \item{All metrics from summarize_survey()}{}
+#'     \item{team_size}{Number of employees in the team (direct reports only, or
+#'       full subtree when \code{full_tree = TRUE})}
+#'     \item{mean, sd, glint_score, n_responses, n_skips, n_total}{Descriptive
+#'       statistics for this manager's team on this question}
+#'     \item{pct_favorable, pct_neutral, pct_unfavorable}{Favorability
+#'       percentages for this manager's team on this question}
 #'   }
 #'
 #' @export
@@ -30,7 +34,6 @@
 #' manager_summary_full <- aggregate_by_manager(survey, scale_points = 5, full_tree = TRUE)
 #' }
 aggregate_by_manager <- function(survey, scale_points, full_tree = FALSE) {
-  # Handle glint_survey objects
   if (inherits(survey, "glint_survey")) {
     data <- survey$data
     questions <- survey$metadata$questions
@@ -39,21 +42,17 @@ aggregate_by_manager <- function(survey, scale_points, full_tree = FALSE) {
     questions <- extract_questions(data)
   }
 
-  # Get unique managers
   managers <- data %>%
     dplyr::filter(!is.na(`Manager ID`)) %>%
     dplyr::distinct(`Manager ID`) %>%
     dplyr::pull(`Manager ID`)
 
-  # Get manager names
   manager_names <- data %>%
     dplyr::filter(`EMP ID` %in% managers) %>%
     dplyr::distinct(`EMP ID`, `First Name`, `Last Name`) %>%
     dplyr::mutate(manager_name = paste(`First Name`, `Last Name`))
 
-  # Aggregate for each manager
   results <- purrr::map_dfr(managers, function(mgr_id) {
-    # Get team members
     if (full_tree) {
       team_members <- get_all_reports(mgr_id, data)
     } else {
@@ -66,11 +65,9 @@ aggregate_by_manager <- function(survey, scale_points, full_tree = FALSE) {
       return(NULL)
     }
 
-    # Filter data to team members
     team_data <- data %>%
       dplyr::filter(`EMP ID` %in% team_members)
 
-    # Analyze each question for this team
     question_results <- summarize_survey(team_data, scale_points = scale_points, questions = "all")
     question_results$manager_id <- mgr_id
     question_results$team_size <- length(team_members)
@@ -78,7 +75,6 @@ aggregate_by_manager <- function(survey, scale_points, full_tree = FALSE) {
     return(question_results)
   })
 
-  # Add manager names
   results <- results %>%
     dplyr::left_join(manager_names, by = c("manager_id" = "EMP ID")) %>%
     dplyr::select(manager_id, manager_name, question, team_size, dplyr::everything())

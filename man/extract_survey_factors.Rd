@@ -23,17 +23,22 @@ extract_survey_factors(
 
 \item{min_loading}{Minimum factor loading to display in results (default: 0.3)}
 
-\item{fm}{Character string indicating factoring method: "minres" (default),
-"ml" (maximum likelihood), "pa" (principal axis), "wls" (weighted least squares)}
+\item{fm}{Character string indicating factoring method: "minres" (minimum
+residuals, default), "ml" (maximum likelihood), "pa" (principal axis),
+"wls" (weighted least squares), "gls" (generalized least squares), or
+"uls" (unweighted least squares)}
 }
 \value{
 A list containing:
 \describe{
-\item{loadings}{Matrix of factor loadings}
-\item{loadings_clean}{Tibble of loadings above min_loading threshold}
-\item{factor_correlations}{Correlation matrix between factors (for oblique rotations)}
-\item{variance_explained}{Tibble showing variance explained by each factor}
-\item{communalities}{Tibble showing communality (h2) for each question}
+\item{factor_summary}{A tibble with one row per question-factor combination
+(filtered to \code{abs(loading) >= min_loading}), containing:
+\code{question} (item text), \code{factor} (factor name),
+\code{loading} (loading coefficient), \code{loading_label}
+("Strong" >= 0.75 / "Medium" 0.60-0.74 / "Weak" < 0.60),
+\code{communality} (proportion of item variance explained by all factors),
+and \code{factor_variance_pct} (percentage of total variance explained
+by this factor). Sorted by factor then descending loading strength.}
 \item{fa_object}{Original fa object from psych package for further analysis}
 }
 }
@@ -51,10 +56,10 @@ factors <- extract_survey_factors(survey)
 # Extract 3 factors with varimax rotation
 factors <- extract_survey_factors(survey, n_factors = 3, rotation = "varimax")
 
-# View clean loadings
-print(factors$loadings_clean)
+# View consolidated factor summary
+print(factors$factor_summary)
 
-# View variance explained
-print(factors$variance_explained)
+# Filter to strong loaders only
+strong <- dplyr::filter(factors$factor_summary, loading_label == "Strong")
 }
 }

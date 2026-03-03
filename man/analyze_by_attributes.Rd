@@ -6,7 +6,7 @@
 \usage{
 analyze_by_attributes(
   survey,
-  attribute_file,
+  attribute_file = NULL,
   scale_points,
   attribute_cols,
   emp_id_col = "EMP ID",
@@ -14,21 +14,24 @@ analyze_by_attributes(
 )
 }
 \arguments{
-\item{survey}{A glint_survey object or data frame containing survey data}
+\item{survey}{A \code{glint_survey} object or data frame. If attributes have
+already been joined via \code{join_attributes()}, \code{attribute_file} can
+be omitted.}
 
-\item{attribute_file}{Character string path to CSV file containing employee
-attributes}
+\item{attribute_file}{Optional. A file path (character string) or data frame
+containing employee attributes to join. If \code{NULL} (default), the
+survey must already contain the columns named in \code{attribute_cols}.}
 
 \item{scale_points}{Integer specifying the number of scale points (2-11)}
 
-\item{attribute_cols}{Character vector of column names from the attribute
-file to group by (e.g., c("Department", "Gender", "Tenure Group"))}
+\item{attribute_cols}{Character vector of column names to group by
+(e.g., \code{c("Department", "Gender", "Tenure Group")})}
 
 \item{emp_id_col}{Character string specifying the employee ID column name
-in the attribute file (default: "EMP ID")}
+in the attribute data (default: \code{"EMP ID"})}
 
 \item{min_group_size}{Integer specifying the minimum number of employees
-required for an attribute group to be included in results (default: 5)}
+required for a group to be included in results (default: 5)}
 }
 \value{
 A tibble with one row per attribute-group-question combination
@@ -36,36 +39,50 @@ containing:
 \describe{
 \item{attribute columns}{Values for each attribute grouping variable}
 \item{group_size}{Number of employees in this attribute group}
-\item{All columns from summarize_survey()}{question, n_responses, n_skips,
-n_total, response_rate, mean, sd, pct_favorable, pct_neutral,
-pct_unfavorable}
+\item{question, mean, sd, n_responses, n_skips, n_total}{
+Descriptive statistics for this group on this question}
+\item{pct_favorable, pct_neutral, pct_unfavorable}{Favorability
+percentages for this group on this question}
 }
 }
 \description{
 Aggregates survey responses by employee attributes (e.g., Department,
-Gender, Tenure) and calculates the same metrics as summarize_survey() for
-each attribute group combination. Only groups meeting the minimum size
+Gender, Tenure) and calculates the same metrics as \code{summarize_survey()}
+for each attribute group combination. Only groups meeting the minimum size
 threshold are included in the results.
+}
+\details{
+Attributes can be supplied in two ways:
+\enumerate{
+\item Pass \code{attribute_file} (a file path or data frame) and the join
+is performed internally on each call.
+\item Pre-join attributes once with \code{join_attributes()} and pass the
+enriched survey directly — omit \code{attribute_file} entirely. This is
+more efficient when calling \code{analyze_by_attributes()} multiple times
+or when you want to filter the data before analysis.
+}
 }
 \examples{
 \dontrun{
 survey <- read_glint_survey("survey_export.csv")
 
-# Analyze by single attribute
-dept_analysis <- analyze_by_attributes(
+# Option 1: provide attribute_file directly
+results <- analyze_by_attributes(
   survey,
   attribute_file = "employee_attributes.csv",
   scale_points = 5,
   attribute_cols = "Department"
 )
 
-# Analyze by multiple attributes
-multi_analysis <- analyze_by_attributes(
-  survey,
-  attribute_file = "employee_attributes.csv",
-  scale_points = 5,
-  attribute_cols = c("Department", "Gender", "Tenure Group"),
-  min_group_size = 10
-)
+# Option 2: pre-join with join_attributes(), then omit attribute_file
+survey_enriched <- join_attributes(survey, "employee_attributes.csv")
+results <- analyze_by_attributes(survey_enriched, scale_points = 5,
+                                 attribute_cols = "Department")
+
+# Option 2 makes filtering easy before analysis
+survey_na <- survey_enriched
+survey_na$data <- dplyr::filter(survey_enriched$data, Division == "North America")
+results_na <- analyze_by_attributes(survey_na, scale_points = 5,
+                                    attribute_cols = "Department")
 }
 }

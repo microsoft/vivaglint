@@ -12,10 +12,16 @@ read_glint_survey(file_path, encoding = "UTF-8")
 \item{encoding}{Character string specifying file encoding (default: "UTF-8")}
 }
 \value{
-A list with two elements:
+A \code{glint_survey} object (an S3 class extending \code{list}) with
+two elements:
 \describe{
-\item{data}{A tibble containing the survey data}
-\item{metadata}{A list with survey metadata including standard columns and question list}
+\item{data}{A tibble containing all survey responses. Date columns are
+parsed automatically from DD-MM-YYYY HH:MM format to POSIXct.}
+\item{metadata}{A list with five elements: \code{standard_columns} (the
+eight standard Glint column names), \code{questions} (a tibble from
+\code{extract_questions()} with one row per question), \code{n_respondents}
+(total row count), \code{n_questions} (number of questions), and
+\code{file_path} (the path originally supplied).}
 }
 }
 \description{

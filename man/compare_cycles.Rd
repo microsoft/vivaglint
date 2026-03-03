@@ -19,9 +19,16 @@ A tibble with one row per question-cycle combination containing:
 \describe{
 \item{cycle}{The cycle name or number}
 \item{question}{The question text}
-\item{All metrics from summarize_survey()}{}
-\item{change_from_previous}{Change in mean from previous cycle (NA for first cycle)}
-\item{pct_change_from_previous}{Percent change from previous cycle}
+\item{mean, sd, n_responses, n_skips, n_total}{Descriptive
+statistics for this question in this cycle (see \code{summarize_survey()})}
+\item{pct_favorable, pct_neutral, pct_unfavorable}{Favorability
+percentages for this question in this cycle}
+\item{change_from_previous}{Change in raw mean score from the previous
+cycle (NA for the first cycle)}
+\item{pct_change_from_previous}{Percentage change in raw mean score from
+the previous cycle (NA for the first cycle)}
+\item{glint_score_change_from_previous}{Change in Glint Score (0-100
+scale) from the previous cycle (NA for the first cycle)}
 }
 }
 \description{

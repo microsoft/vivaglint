@@ -25,14 +25,21 @@ data_type = "comments" (default: FALSE)}
 columns (EMP ID, Manager ID, etc.) in the output (default: TRUE)}
 }
 \value{
-A tibble (or list of tibbles if data_type = "both") in long format with columns:
+When \code{data_type = "all"} or \code{"comments"}, a single tibble
+in long format with columns:
 \describe{
-\item{Standard columns}{EMP ID, Manager ID, etc. (if include_standard_cols = TRUE)}
+\item{Standard columns}{EMP ID, First Name, Last Name, etc. (if
+\code{include_standard_cols = TRUE})}
 \item{question}{The question text}
 \item{response}{Numeric response value}
-\item{comment}{Comment text (if provided)}
-\item{comment_topics}{Comma-separated topic tags}
+\item{comment}{Comment text (NA if not provided)}
+\item{comment_topics}{Comma-separated topic tags (NA if not provided)}
 \item{sensitive_flag}{Sensitivity flag value}
+}
+When \code{data_type = "both"}, a named list with two elements:
+\describe{
+\item{all}{Long-format tibble of all responses (same structure as above)}
+\item{comments}{Long-format tibble filtered to rows with non-empty comments}
 }
 }
 \description{
