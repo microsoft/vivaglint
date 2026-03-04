@@ -1,4 +1,4 @@
-# vivaglint
+# vivaglint <img src="man\figures\vivaglint-badge.png" align="right" height="138" alt="vivaglint" />
 
 R package for analyzing Viva Glint survey data with comprehensive statistical tools and organizational insights.
 
