@@ -9,6 +9,10 @@
 #' @param manager_id_col Character string specifying the manager ID column name
 #' @param full_tree Logical indicating whether to include full subtree
 #'   (all indirect reports) or only direct reports (default: FALSE)
+#' @param plot Logical. If \code{TRUE}, prints a ranked lollipop chart of team
+#'   Glint Scores by manager and returns the data invisibly. When multiple
+#'   questions are present the chart is faceted by question. Requires
+#'   \pkg{ggplot2}. Default: \code{FALSE}.
 #'
 #' @return A tibble with one row per manager-question combination containing:
 #'   \describe{
@@ -22,6 +26,8 @@
 #'     \item{pct_favorable, pct_neutral, pct_unfavorable}{Favorability
 #'       percentages for this manager's team on this question}
 #'   }
+#'   When \code{plot = TRUE}, the same tibble is returned invisibly after
+#'   printing the plot.
 #'
 #' @export
 #'
@@ -39,8 +45,15 @@
 #'                                              emp_id_col = "EMP ID",
 #'                                              manager_id_col = "Manager ID",
 #'                                              full_tree = TRUE)
+#'
+#' # With ranked dot plot
+#' aggregate_by_manager(survey, scale_points = 5, emp_id_col = "EMP ID",
+#'                      manager_id_col = "Manager ID", plot = TRUE)
 #' }
-aggregate_by_manager <- function(survey, scale_points, emp_id_col, manager_id_col, full_tree = FALSE) {
+aggregate_by_manager <- function(survey, scale_points, emp_id_col,
+                                 manager_id_col, full_tree = FALSE,
+                                 plot = FALSE) {
+  if (plot) .check_ggplot2()
   if (inherits(survey, "glint_survey")) {
     data <- survey$data
     questions <- survey$metadata$questions
@@ -85,6 +98,11 @@ aggregate_by_manager <- function(survey, scale_points, emp_id_col, manager_id_co
   results <- results %>%
     dplyr::left_join(manager_names, by = setNames(emp_id_col, "manager_id")) %>%
     dplyr::select(manager_id, manager_name, question, team_size, dplyr::everything())
+
+  if (plot) {
+    print(.plot_manager(results))
+    return(invisible(results))
+  }
 
   return(results)
 }

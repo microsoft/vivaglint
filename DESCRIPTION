@@ -25,6 +25,7 @@ Suggests:
     testthat (>= 3.0.0),
     knitr,
     rmarkdown,
-    psych (>= 2.0.0)
+    psych (>= 2.0.0),
+    ggplot2 (>= 3.0.0)
 VignetteBuilder: knitr
 Config/testthat/edition: 3

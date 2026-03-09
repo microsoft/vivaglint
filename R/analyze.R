@@ -8,6 +8,9 @@
 #' @param scale_points Integer specifying the number of scale points (2-11)
 #' @param questions Character vector of question text(s) to analyze, or "all" to
 #'   analyze all questions (default: "all")
+#' @param plot Logical. If \code{TRUE}, prints a favorability stacked bar chart
+#'   sorted by Glint Score and returns the data invisibly. Requires
+#'   \pkg{ggplot2}. Default: \code{FALSE}.
 #'
 #' @return A tibble with one row per question containing:
 #'   \describe{
@@ -23,6 +26,8 @@
 #'     \item{pct_neutral}{Percentage of responses classified as neutral}
 #'     \item{pct_unfavorable}{Percentage of responses classified as unfavorable}
 #'   }
+#'   When \code{plot = TRUE}, the same tibble is returned invisibly after
+#'   printing the plot.
 #'
 #' @export
 #'
@@ -36,8 +41,13 @@
 #' # Summarize specific questions
 #' summary_subset <- summarize_survey(survey, scale_points = 5,
 #'   questions = c("My work is meaningful", "I feel valued"))
+#'
+#' # With favorability chart
+#' summarize_survey(survey, scale_points = 5, plot = TRUE)
 #' }
-summarize_survey <- function(survey, scale_points, questions = "all") {
+summarize_survey <- function(survey, scale_points, questions = "all",
+                             plot = FALSE) {
+  if (plot) .check_ggplot2()
   if (!scale_points %in% 2:11) {
     stop("scale_points must be an integer between 2 and 11")
   }
@@ -107,6 +117,11 @@ summarize_survey <- function(survey, scale_points, questions = "all") {
     return(result)
   })
 
+  if (plot) {
+    print(.plot_survey_summary(results))
+    return(invisible(results))
+  }
+
   return(results)
 }
 
@@ -119,6 +134,9 @@ summarize_survey <- function(survey, scale_points, questions = "all") {
 #' @param survey A glint_survey object or data frame containing survey data
 #' @param questions Character vector of question text(s) to analyze, or "all" to
 #'   analyze all questions (default: "all")
+#' @param plot Logical. If \code{TRUE}, prints a stacked bar chart of response
+#'   value distributions (red \eqn{\to} blue gradient) and returns the data
+#'   invisibly. Requires \pkg{ggplot2}. Default: \code{FALSE}.
 #'
 #' @return A tibble with one row per question containing:
 #'   \describe{
@@ -126,6 +144,8 @@ summarize_survey <- function(survey, scale_points, questions = "all") {
 #'     \item{count_X}{Count of responses with value X (for each unique response value)}
 #'     \item{pct_X}{Percentage of responses with value X (for each unique response value)}
 #'   }
+#'   When \code{plot = TRUE}, the same tibble is returned invisibly after
+#'   printing the plot.
 #'
 #' @export
 #'
@@ -139,8 +159,12 @@ summarize_survey <- function(survey, scale_points, questions = "all") {
 #' # Get response distribution for specific questions
 #' dist_subset <- get_response_dist(survey,
 #'   questions = c("My work is meaningful", "I feel valued"))
+#'
+#' # With distribution chart
+#' get_response_dist(survey, plot = TRUE)
 #' }
-get_response_dist <- function(survey, questions = "all") {
+get_response_dist <- function(survey, questions = "all", plot = FALSE) {
+  if (plot) .check_ggplot2()
   if (inherits(survey, "glint_survey")) {
     data <- survey$data
     all_questions <- survey$metadata$questions$question
@@ -187,6 +211,11 @@ get_response_dist <- function(survey, questions = "all") {
   })
 
   results <- expand_value_distributions(results)
+
+  if (plot) {
+    print(.plot_response_dist(results))
+    return(invisible(results))
+  }
 
   return(results)
 }
@@ -237,6 +266,9 @@ expand_value_distributions <- function(analysis_df) {
 #' @param scale_points Integer specifying the number of scale points (2-11)
 #' @param cycle_names Optional character vector of names for each cycle.
 #'   If not provided, will use "Cycle 1", "Cycle 2", etc.
+#' @param plot Logical. If \code{TRUE}, prints a line chart of Glint Score over
+#'   cycles (one line per question) and returns the data invisibly. Requires
+#'   \pkg{ggplot2}. Default: \code{FALSE}.
 #'
 #' @return A tibble with one row per question-cycle combination containing:
 #'   \describe{
@@ -253,6 +285,8 @@ expand_value_distributions <- function(analysis_df) {
 #'     \item{glint_score_change_from_previous}{Change in Glint Score (0-100
 #'       scale) from the previous cycle (NA for the first cycle)}
 #'   }
+#'   When \code{plot = TRUE}, the same tibble is returned invisibly after
+#'   printing the plot.
 #'
 #' @export
 #'
@@ -266,8 +300,15 @@ expand_value_distributions <- function(analysis_df) {
 #'                               scale_points = 5,
 #'                               cycle_names = c("Q1 2023", "Q2 2023", "Q3 2023"))
 #' print(comparison)
+#'
+#' # With trend chart
+#' compare_cycles(survey1, survey2, survey3, scale_points = 5,
+#'                cycle_names = c("Q1 2023", "Q2 2023", "Q3 2023"),
+#'                plot = TRUE)
 #' }
-compare_cycles <- function(..., scale_points, cycle_names = NULL) {
+compare_cycles <- function(..., scale_points, cycle_names = NULL,
+                           plot = FALSE) {
+  if (plot) .check_ggplot2()
   surveys <- list(...)
 
   if (length(surveys) < 2) {
@@ -300,6 +341,11 @@ compare_cycles <- function(..., scale_points, cycle_names = NULL) {
     ) %>%
     dplyr::ungroup()
 
+  if (plot) {
+    print(.plot_compare_cycles(analyses, cycle_names))
+    return(invisible(analyses))
+  }
+
   return(analyses)
 }
 
@@ -317,6 +363,10 @@ compare_cycles <- function(..., scale_points, cycle_names = NULL) {
 #'   correlation matrix
 #' @param use Character string indicating how to handle missing values, passed to
 #'   cor() function (default: "pairwise.complete.obs")
+#' @param plot Logical. If \code{TRUE}, prints a correlation heatmap and returns
+#'   the data invisibly. Only supported when \code{format = "long"} (the
+#'   default); ignored with a warning when \code{format = "matrix"}. Requires
+#'   \pkg{ggplot2}. Default: \code{FALSE}.
 #'
 #' @return If format = "long", a tibble with columns:
 #'   \describe{
@@ -326,7 +376,9 @@ compare_cycles <- function(..., scale_points, cycle_names = NULL) {
 #'     \item{p_value}{P-value for test of correlation significance}
 #'     \item{n}{Number of complete pairs used in calculation}
 #'   }
-#'   If format = "matrix", a matrix with questions as rows and columns
+#'   If format = "matrix", a matrix with questions as rows and columns.
+#'   When \code{plot = TRUE} and \code{format = "long"}, the tibble is returned
+#'   invisibly after printing the plot.
 #'
 #' @export
 #'
@@ -342,8 +394,13 @@ compare_cycles <- function(..., scale_points, cycle_names = NULL) {
 #'
 #' # Get correlation matrix
 #' cor_matrix <- get_correlations(survey, format = "matrix")
+#'
+#' # With correlation heatmap
+#' get_correlations(survey, plot = TRUE)
 #' }
-get_correlations <- function(survey, method = "pearson", format = "long", use = "pairwise.complete.obs") {
+get_correlations <- function(survey, method = "pearson", format = "long",
+                             use = "pairwise.complete.obs", plot = FALSE) {
+  if (plot) .check_ggplot2()
   if (!method %in% c("spearman", "pearson", "kendall")) {
     stop("method must be one of: 'spearman', 'pearson', or 'kendall'")
   }
@@ -364,6 +421,9 @@ get_correlations <- function(survey, method = "pearson", format = "long", use = 
   cor_matrix <- cor(response_data, method = method, use = use)
 
   if (format == "matrix") {
+    if (plot) {
+      warning("plot = TRUE is not supported when format = 'matrix'. Returning matrix without plot.")
+    }
     return(cor_matrix)
   } else {
     long_data <- expand.grid(
@@ -404,6 +464,11 @@ get_correlations <- function(survey, method = "pearson", format = "long", use = 
     long_data <- dplyr::as_tibble(long_data) %>%
       dplyr::select(question1, question2, correlation, p_value, n)
 
+    if (plot) {
+      print(.plot_correlations(long_data))
+      return(invisible(long_data))
+    }
+
     return(long_data)
   }
 }
@@ -424,6 +489,9 @@ get_correlations <- function(survey, method = "pearson", format = "long", use = 
 #'   residuals, default), "ml" (maximum likelihood), "pa" (principal axis),
 #'   "wls" (weighted least squares), "gls" (generalized least squares), or
 #'   "uls" (unweighted least squares)
+#' @param plot Logical. If \code{TRUE}, prints a factor loading heatmap and
+#'   returns the result list invisibly. Requires \pkg{ggplot2}. Default:
+#'   \code{FALSE}.
 #'
 #' @return A list containing:
 #'   \describe{
@@ -437,6 +505,8 @@ get_correlations <- function(survey, method = "pearson", format = "long", use = 
 #'       by this factor). Sorted by factor then descending loading strength.}
 #'     \item{fa_object}{Original fa object from psych package for further analysis}
 #'   }
+#'   When \code{plot = TRUE}, the same list is returned invisibly after printing
+#'   the plot.
 #'
 #' @export
 #'
@@ -455,9 +525,14 @@ get_correlations <- function(survey, method = "pearson", format = "long", use = 
 #'
 #' # Filter to strong loaders only
 #' strong <- dplyr::filter(factors$factor_summary, loading_label == "Strong")
+#'
+#' # With factor loading heatmap
+#' extract_survey_factors(survey, plot = TRUE)
 #' }
 extract_survey_factors <- function(survey, n_factors = NULL, rotation = "oblimin",
-                                   min_loading = 0.3, fm = "minres") {
+                                   min_loading = 0.3, fm = "minres",
+                                   plot = FALSE) {
+  if (plot) .check_ggplot2()
   if (!requireNamespace("psych", quietly = TRUE)) {
     stop("Package 'psych' is required for factor analysis. Install it with: install.packages('psych')")
   }
@@ -568,6 +643,12 @@ extract_survey_factors <- function(survey, n_factors = NULL, rotation = "oblimin
   )
 
   class(result) <- c("survey_factors", "list")
+
+  if (plot) {
+    print(.plot_survey_factors(result$factor_summary))
+    return(invisible(result))
+  }
+
   return(result)
 }
 
@@ -592,6 +673,11 @@ extract_survey_factors <- function(survey, n_factors = NULL, rotation = "oblimin
 #' @param min_group_size Minimum number of employees required in an attribute group
 #'   for it to be included in results (default: 5). Ignored when
 #'   \code{attribute_cols = NULL}.
+#' @param plot Logical. If \code{TRUE}, prints a grouped bar chart of favorable
+#'   vs. unfavorable attrition rates faceted by time period and returns the data
+#'   invisibly. When \code{attribute_cols} is supplied, the first attribute
+#'   column is used as an additional facet dimension. Requires \pkg{ggplot2}.
+#'   Default: \code{FALSE}.
 #'
 #' @return A tibble with one row per (attribute group)-question-time period
 #'   combination containing:
@@ -608,6 +694,8 @@ extract_survey_factors <- function(survey, n_factors = NULL, rotation = "oblimin
 #'     \item{unfavorable_attrition}{Proportion who left within time period (unfavorable)}
 #'     \item{attrition_ratio}{Ratio of unfavorable to favorable attrition rates}
 #'   }
+#'   When \code{plot = TRUE}, the same tibble is returned invisibly after
+#'   printing the plot.
 #'
 #' @export
 #'
@@ -635,10 +723,17 @@ extract_survey_factors <- function(survey, n_factors = NULL, rotation = "oblimin
 #'   attribute_cols = c("Department", "Gender"),
 #'   min_group_size = 10
 #' )
+#'
+#' # With attrition chart
+#' analyze_attrition(survey, attrition_file = "attrition.csv",
+#'                   emp_id_col = "EMP ID", term_date_col = "Termination Date",
+#'                   scale_points = 5, plot = TRUE)
 #' }
 analyze_attrition <- function(survey, attrition_file, emp_id_col, term_date_col,
                               scale_points, time_periods = c(90, 180, 365),
-                              attribute_cols = NULL, min_group_size = 5) {
+                              attribute_cols = NULL, min_group_size = 5,
+                              plot = FALSE) {
+  if (plot) .check_ggplot2()
   if (!scale_points %in% 2:11) {
     stop("scale_points must be an integer between 2 and 11")
   }
@@ -774,7 +869,12 @@ analyze_attrition <- function(survey, attrition_file, emp_id_col, term_date_col,
 
   # Overall analysis (no attributes)
   if (is.null(attribute_cols)) {
-    return(run_attrition_core(combined_data))
+    results <- run_attrition_core(combined_data)
+    if (plot) {
+      print(.plot_attrition(results, NULL))
+      return(invisible(results))
+    }
+    return(results)
   }
 
   # Attribute-segmented analysis
@@ -788,7 +888,7 @@ analyze_attrition <- function(survey, attrition_file, emp_id_col, term_date_col,
     return(dplyr::tibble())
   }
 
-  purrr::map_dfr(seq_len(nrow(attribute_groups)), function(i) {
+  results <- purrr::map_dfr(seq_len(nrow(attribute_groups)), function(i) {
     group_values <- attribute_groups[i, attribute_cols, drop = FALSE]
     group_size   <- attribute_groups$group_size[i]
 
@@ -804,6 +904,13 @@ analyze_attrition <- function(survey, attrition_file, emp_id_col, term_date_col,
       run_attrition_core(group_data)
     )
   })
+
+  if (plot) {
+    print(.plot_attrition(results, attribute_cols))
+    return(invisible(results))
+  }
+
+  results
 }
 
 
@@ -837,6 +944,10 @@ analyze_attrition <- function(survey, attrition_file, emp_id_col, term_date_col,
 #'   in both the survey data and the attribute data
 #' @param min_group_size Integer specifying the minimum number of employees
 #'   required for a group to be included in results (default: 5)
+#' @param plot Logical. If \code{TRUE}, prints a faceted dot plot of Glint
+#'   Scores by attribute group (one facet per question) and returns the data
+#'   invisibly. When multiple \code{attribute_cols} are supplied, only the first
+#'   is plotted. Requires \pkg{ggplot2}. Default: \code{FALSE}.
 #'
 #' @return A tibble with one row per attribute-group-question combination
 #'   containing:
@@ -848,6 +959,8 @@ analyze_attrition <- function(survey, attrition_file, emp_id_col, term_date_col,
 #'     \item{pct_favorable, pct_neutral, pct_unfavorable}{Favorability
 #'       percentages for this group on this question}
 #'   }
+#'   When \code{plot = TRUE}, the same tibble is returned invisibly after
+#'   printing the plot.
 #'
 #' @export
 #'
@@ -860,23 +973,26 @@ analyze_attrition <- function(survey, attrition_file, emp_id_col, term_date_col,
 #'   survey,
 #'   attribute_file = "employee_attributes.csv",
 #'   scale_points = 5,
-#'   attribute_cols = "Department"
+#'   attribute_cols = "Department",
+#'   emp_id_col = "EMP ID"
 #' )
 #'
 #' # Option 2: pre-join with join_attributes(), then omit attribute_file
-#' survey_enriched <- join_attributes(survey, "employee_attributes.csv")
+#' survey_enriched <- join_attributes(survey, "employee_attributes.csv",
+#'                                    emp_id_col = "EMP ID")
 #' results <- analyze_by_attributes(survey_enriched, scale_points = 5,
-#'                                  attribute_cols = "Department")
+#'                                  attribute_cols = "Department",
+#'                                  emp_id_col = "EMP ID")
 #'
-#' # Option 2 makes filtering easy before analysis
-#' survey_na <- survey_enriched
-#' survey_na$data <- dplyr::filter(survey_enriched$data, Division == "North America")
-#' results_na <- analyze_by_attributes(survey_na, scale_points = 5,
-#'                                     attribute_cols = "Department")
+#' # With dot plot
+#' analyze_by_attributes(survey_enriched, scale_points = 5,
+#'                       attribute_cols = "Department",
+#'                       emp_id_col = "EMP ID", plot = TRUE)
 #' }
 analyze_by_attributes <- function(survey, attribute_file = NULL, scale_points,
                                  attribute_cols, emp_id_col,
-                                 min_group_size = 5) {
+                                 min_group_size = 5, plot = FALSE) {
+  if (plot) .check_ggplot2()
   if (!scale_points %in% 2:11) {
     stop("scale_points must be an integer between 2 and 11")
   }
@@ -952,6 +1068,11 @@ analyze_by_attributes <- function(survey, attribute_file = NULL, scale_points,
 
     return(group_summary)
   })
+
+  if (plot) {
+    print(.plot_by_attributes(results, attribute_cols))
+    return(invisible(results))
+  }
 
   return(results)
 }
