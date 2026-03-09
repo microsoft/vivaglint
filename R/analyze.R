@@ -834,7 +834,7 @@ analyze_attrition <- function(survey, attrition_file, emp_id_col, term_date_col,
 #' @param attribute_cols Character vector of column names to group by
 #'   (e.g., \code{c("Department", "Gender", "Tenure Group")})
 #' @param emp_id_col Character string specifying the employee ID column name
-#'   in the attribute data (default: \code{"EMP ID"})
+#'   in both the survey data and the attribute data
 #' @param min_group_size Integer specifying the minimum number of employees
 #'   required for a group to be included in results (default: 5)
 #'
@@ -875,7 +875,7 @@ analyze_attrition <- function(survey, attrition_file, emp_id_col, term_date_col,
 #'                                     attribute_cols = "Department")
 #' }
 analyze_by_attributes <- function(survey, attribute_file = NULL, scale_points,
-                                 attribute_cols, emp_id_col = "EMP ID",
+                                 attribute_cols, emp_id_col,
                                  min_group_size = 5) {
   if (!scale_points %in% 2:11) {
     stop("scale_points must be an integer between 2 and 11")
@@ -904,7 +904,7 @@ analyze_by_attributes <- function(survey, attribute_file = NULL, scale_points,
   combined_data <- survey_data
 
   attribute_groups <- combined_data %>%
-    dplyr::select(dplyr::all_of(attribute_cols), `EMP ID`) %>%
+    dplyr::select(dplyr::all_of(c(attribute_cols, emp_id_col))) %>%
     dplyr::distinct() %>%
     dplyr::group_by(dplyr::across(dplyr::all_of(attribute_cols))) %>%
     dplyr::summarise(
@@ -1083,19 +1083,20 @@ search_comments <- function(survey, query, exact = FALSE, max_distance = 0.2) {
 #'
 #' Separates a survey dataset into two data frames: one containing only numeric
 #' response data (for statistical analysis) and one containing only comment
-#' and topic data (for qualitative analysis). Both outputs retain \code{EMP ID}
-#' so they can be rejoined at any time.
+#' and topic data (for qualitative analysis). Both outputs retain the employee
+#' ID column so they can be rejoined at any time.
 #'
 #' @param survey A glint_survey object or data frame containing survey data
+#' @param emp_id_col Character string specifying the employee ID column name
 #'
 #' @return A named list with two elements:
 #'   \describe{
 #'     \item{quantitative}{A tibble with all standard respondent columns plus
 #'       one numeric response column per question. Comment, topic, and sensitive
 #'       flag columns are excluded.}
-#'     \item{qualitative}{A tibble with \code{EMP ID} plus the comment, topic,
-#'       and sensitive flag columns for every question. Numeric response columns
-#'       are excluded.}
+#'     \item{qualitative}{A tibble with the employee ID column plus the comment,
+#'       topic, and sensitive flag columns for every question. Numeric response
+#'       columns are excluded.}
 #'   }
 #'
 #' @export
@@ -1103,7 +1104,7 @@ search_comments <- function(survey, query, exact = FALSE, max_distance = 0.2) {
 #' @examples
 #' \dontrun{
 #' survey <- read_glint_survey("survey_export.csv")
-#' parts  <- split_survey_data(survey)
+#' parts  <- split_survey_data(survey, emp_id_col = "EMP ID")
 #'
 #' # Analyze numeric responses
 #' summary <- summarize_survey(parts$quantitative, scale_points = 5)
@@ -1111,7 +1112,7 @@ search_comments <- function(survey, query, exact = FALSE, max_distance = 0.2) {
 #' # Work with comments separately
 #' comments <- parts$qualitative
 #' }
-split_survey_data <- function(survey) {
+split_survey_data <- function(survey, emp_id_col) {
   if (inherits(survey, "glint_survey")) {
     data <- survey$data
   } else {
@@ -1132,8 +1133,8 @@ split_survey_data <- function(survey) {
     response_cols[response_cols %in% names(data)]
   )
 
-  # Qualitative: EMP ID (for joining) + all comment/topic/flag columns
-  qual_cols <- c("EMP ID", comment_cols, topics_cols, flag_cols)
+  # Qualitative: employee ID (for joining) + all comment/topic/flag columns
+  qual_cols <- c(emp_id_col, comment_cols, topics_cols, flag_cols)
 
   list(
     quantitative = dplyr::select(data, dplyr::all_of(quant_cols)),

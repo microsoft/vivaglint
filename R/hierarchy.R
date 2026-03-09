@@ -5,6 +5,8 @@
 #'
 #' @param survey A glint_survey object or data frame containing survey data
 #' @param scale_points Integer specifying the number of scale points (2-11)
+#' @param emp_id_col Character string specifying the employee ID column name
+#' @param manager_id_col Character string specifying the manager ID column name
 #' @param full_tree Logical indicating whether to include full subtree
 #'   (all indirect reports) or only direct reports (default: FALSE)
 #'
@@ -28,12 +30,17 @@
 #' survey <- read_glint_survey("survey_export.csv")
 #'
 #' # Direct reports only
-#' manager_summary <- aggregate_by_manager(survey, scale_points = 5)
+#' manager_summary <- aggregate_by_manager(survey, scale_points = 5,
+#'                                         emp_id_col = "EMP ID",
+#'                                         manager_id_col = "Manager ID")
 #'
 #' # Full organizational tree
-#' manager_summary_full <- aggregate_by_manager(survey, scale_points = 5, full_tree = TRUE)
+#' manager_summary_full <- aggregate_by_manager(survey, scale_points = 5,
+#'                                              emp_id_col = "EMP ID",
+#'                                              manager_id_col = "Manager ID",
+#'                                              full_tree = TRUE)
 #' }
-aggregate_by_manager <- function(survey, scale_points, full_tree = FALSE) {
+aggregate_by_manager <- function(survey, scale_points, emp_id_col, manager_id_col, full_tree = FALSE) {
   if (inherits(survey, "glint_survey")) {
     data <- survey$data
     questions <- survey$metadata$questions
@@ -43,22 +50,22 @@ aggregate_by_manager <- function(survey, scale_points, full_tree = FALSE) {
   }
 
   managers <- data %>%
-    dplyr::filter(!is.na(`Manager ID`)) %>%
-    dplyr::distinct(`Manager ID`) %>%
-    dplyr::pull(`Manager ID`)
+    dplyr::filter(!is.na(.data[[manager_id_col]])) %>%
+    dplyr::distinct(dplyr::across(dplyr::all_of(manager_id_col))) %>%
+    dplyr::pull(manager_id_col)
 
   manager_names <- data %>%
-    dplyr::filter(`EMP ID` %in% managers) %>%
-    dplyr::distinct(`EMP ID`, `First Name`, `Last Name`) %>%
+    dplyr::filter(.data[[emp_id_col]] %in% managers) %>%
+    dplyr::distinct(dplyr::across(dplyr::all_of(c(emp_id_col, "First Name", "Last Name")))) %>%
     dplyr::mutate(manager_name = paste(`First Name`, `Last Name`))
 
   results <- purrr::map_dfr(managers, function(mgr_id) {
     if (full_tree) {
-      team_members <- get_all_reports(mgr_id, data)
+      team_members <- get_all_reports(mgr_id, data, emp_id_col, manager_id_col)
     } else {
       team_members <- data %>%
-        dplyr::filter(`Manager ID` == mgr_id) %>%
-        dplyr::pull(`EMP ID`)
+        dplyr::filter(.data[[manager_id_col]] == mgr_id) %>%
+        dplyr::pull(emp_id_col)
     }
 
     if (length(team_members) == 0) {
@@ -66,7 +73,7 @@ aggregate_by_manager <- function(survey, scale_points, full_tree = FALSE) {
     }
 
     team_data <- data %>%
-      dplyr::filter(`EMP ID` %in% team_members)
+      dplyr::filter(.data[[emp_id_col]] %in% team_members)
 
     question_results <- summarize_survey(team_data, scale_points = scale_points, questions = "all")
     question_results$manager_id <- mgr_id
@@ -76,7 +83,7 @@ aggregate_by_manager <- function(survey, scale_points, full_tree = FALSE) {
   })
 
   results <- results %>%
-    dplyr::left_join(manager_names, by = c("manager_id" = "EMP ID")) %>%
+    dplyr::left_join(manager_names, by = setNames(emp_id_col, "manager_id")) %>%
     dplyr::select(manager_id, manager_name, question, team_size, dplyr::everything())
 
   return(results)
@@ -88,15 +95,17 @@ aggregate_by_manager <- function(survey, scale_points, full_tree = FALSE) {
 #' Internal function to get all direct and indirect reports for a manager.
 #'
 #' @param manager_id Character string of manager's employee ID
-#' @param data Data frame with survey data including EMP ID and Manager ID
+#' @param data Data frame with survey data
+#' @param emp_id_col Character string specifying the employee ID column name
+#' @param manager_id_col Character string specifying the manager ID column name
 #'
 #' @return Character vector of employee IDs for all reports
 #'
 #' @keywords internal
-get_all_reports <- function(manager_id, data) {
+get_all_reports <- function(manager_id, data, emp_id_col, manager_id_col) {
   direct_reports <- data %>%
-    dplyr::filter(`Manager ID` == manager_id) %>%
-    dplyr::pull(`EMP ID`) %>%
+    dplyr::filter(.data[[manager_id_col]] == manager_id) %>%
+    dplyr::pull(emp_id_col) %>%
     unique()
 
   if (length(direct_reports) == 0) {
@@ -107,7 +116,7 @@ get_all_reports <- function(manager_id, data) {
 
   # Recursively get reports of reports
   for (report in direct_reports) {
-    indirect_reports <- get_all_reports(report, data)
+    indirect_reports <- get_all_reports(report, data, emp_id_col, manager_id_col)
     all_reports <- c(all_reports, indirect_reports)
   }
 

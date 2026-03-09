@@ -250,9 +250,8 @@ extract_questions <- function(data) {
 #' @param attribute_source Either a character string file path to a CSV file, or
 #'   a data frame containing employee attributes. All columns are coerced to
 #'   character to avoid type conflicts during joining.
-#' @param emp_id_col Character string specifying the employee ID column name in
-#'   the attribute data (default: \code{"EMP ID"}). The survey data must contain
-#'   a column named \code{"EMP ID"}.
+#' @param emp_id_col Character string specifying the employee ID column name.
+#'   Must match the column name in both the survey data and the attribute data.
 #'
 #' @return If \code{survey} is a \code{glint_survey} object, returns an enriched
 #'   \code{glint_survey} with the attribute columns appended to \code{$data} and
@@ -260,9 +259,8 @@ extract_questions <- function(data) {
 #'   \code{$metadata$attribute_cols}. If \code{survey} is a plain data frame,
 #'   returns the joined data frame.
 #'
-#'   Respondents whose \code{EMP ID} has no match in the attribute data will
-#'   have \code{NA} for all attribute columns; a message is emitted indicating
-#'   how many were affected.
+#'   Respondents with no match in the attribute data will have \code{NA} for all
+#'   attribute columns; a message is emitted indicating how many were affected.
 #'
 #' @export
 #'
@@ -287,7 +285,7 @@ extract_questions <- function(data) {
 #' results_na <- analyze_by_attributes(na_only, scale_points = 5,
 #'                                     attribute_cols = "Department")
 #' }
-join_attributes <- function(survey, attribute_source, emp_id_col = "EMP ID") {
+join_attributes <- function(survey, attribute_source, emp_id_col) {
   if (inherits(survey, "glint_survey")) {
     data <- survey$data
   } else if (is.data.frame(survey)) {
@@ -296,8 +294,8 @@ join_attributes <- function(survey, attribute_source, emp_id_col = "EMP ID") {
     stop("survey must be a glint_survey object or a data frame")
   }
 
-  if (!"EMP ID" %in% names(data)) {
-    stop("Column 'EMP ID' not found in survey data")
+  if (!emp_id_col %in% names(data)) {
+    stop(sprintf("Column '%s' not found in survey data", emp_id_col))
   }
 
   if (is.character(attribute_source) && length(attribute_source) == 1) {
@@ -336,10 +334,10 @@ join_attributes <- function(survey, attribute_source, emp_id_col = "EMP ID") {
   joined_data <- dplyr::left_join(
     data,
     attributes,
-    by = c("EMP ID" = emp_id_col)
+    by = emp_id_col
   )
 
-  n_unmatched <- sum(!data[["EMP ID"]] %in% attributes[[emp_id_col]])
+  n_unmatched <- sum(!data[[emp_id_col]] %in% attributes[[emp_id_col]])
   if (n_unmatched > 0) {
     message(sprintf(
       "%d respondent(s) had no match in the attribute data and will have NA for all attribute columns.",

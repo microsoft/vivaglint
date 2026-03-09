@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python:*)",
+      "Bash(where vlc:*)",
+      "Bash(powershell:*)",
+      "Bash(winget install:*)",
+      "Bash(/c/Users/ericknudsen.REDMOND/AppData/Local/Microsoft/WinGet/Links/ffmpeg.exe:*)",
+      "Bash(\"$FFMPEG\":*)"
+    ]
+  }
+}
