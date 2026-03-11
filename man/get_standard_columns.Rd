@@ -4,12 +4,18 @@
 \alias{get_standard_columns}
 \title{Get Standard Column Names}
 \usage{
-get_standard_columns()
+get_standard_columns(emp_id_col)
+}
+\arguments{
+\item{emp_id_col}{Character string specifying the employee ID column name}
 }
 \value{
 Character vector of standard column names
 }
 \description{
 Returns the vector of standard column names expected in Viva Glint exports.
+The employee ID column name is configurable because customers use different
+names. "Manager ID" is included for question-detection exclusion but is not
+required to be present.
 }
 \keyword{internal}

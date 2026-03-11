@@ -9,7 +9,8 @@ extract_survey_factors(
   n_factors = NULL,
   rotation = "oblimin",
   min_loading = 0.3,
-  fm = "minres"
+  fm = "minres",
+  plot = FALSE
 )
 }
 \arguments{
@@ -27,6 +28,10 @@ extract_survey_factors(
 residuals, default), "ml" (maximum likelihood), "pa" (principal axis),
 "wls" (weighted least squares), "gls" (generalized least squares), or
 "uls" (unweighted least squares)}
+
+\item{plot}{Logical. If \code{TRUE}, prints a factor loading heatmap and
+returns the result list invisibly. Requires \pkg{ggplot2}. Default:
+\code{FALSE}.}
 }
 \value{
 A list containing:
@@ -41,6 +46,8 @@ and \code{factor_variance_pct} (percentage of total variance explained
 by this factor). Sorted by factor then descending loading strength.}
 \item{fa_object}{Original fa object from psych package for further analysis}
 }
+When \code{plot = TRUE}, the same list is returned invisibly after printing
+the plot.
 }
 \description{
 Performs factor analysis on survey question responses to identify underlying
@@ -61,5 +68,8 @@ print(factors$factor_summary)
 
 # Filter to strong loaders only
 strong <- dplyr::filter(factors$factor_summary, loading_label == "Strong")
+
+# With factor loading heatmap
+extract_survey_factors(survey, plot = TRUE)
 }
 }

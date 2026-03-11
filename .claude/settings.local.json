@@ -10,7 +10,10 @@
       "Bash(Rscript --vanilla:*)",
       "Bash(Rscript gen_plots.R)",
       "Bash(Rscript -e \":*)",
-      "Bash(Rscript -e \"devtools::load_all\\(\\); cat\\(''OK\\\\n''\\)\")"
+      "Bash(Rscript -e \"devtools::load_all\\(\\); cat\\(''OK\\\\n''\\)\")",
+      "WebFetch(domain:microsoft.github.io)",
+      "Bash(Rscript -e \"devtools::document\\(\\)\")",
+      "Bash(Rscript -e \"devtools::test\\(\\)\")"
     ]
   }
 }

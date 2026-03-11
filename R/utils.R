@@ -86,12 +86,17 @@ mean_to_glint_score <- function(mean_val, scale_points) {
 #' Get Standard Column Names
 #'
 #' Returns the vector of standard column names expected in Viva Glint exports.
+#' The employee ID column name is configurable because customers use different
+#' names. "Manager ID" is included for question-detection exclusion but is not
+#' required to be present.
+#'
+#' @param emp_id_col Character string specifying the employee ID column name
 #'
 #' @return Character vector of standard column names
 #'
 #' @keywords internal
-get_standard_columns <- function() {
-  c("First Name", "Last Name", "Email", "Status", "EMP ID", "Manager ID",
+get_standard_columns <- function(emp_id_col) {
+  c("First Name", "Last Name", "Email", "Status", emp_id_col, "Manager ID",
     "Survey Cycle Completion Date", "Survey Cycle Sent Date")
 }
 

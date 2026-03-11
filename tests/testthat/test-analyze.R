@@ -1,5 +1,5 @@
 test_that("summarize_survey calculates metrics for single question", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
   result <- summarize_survey(survey, scale_points = 5, questions = "My work is meaningful")
 
   expect_s3_class(result, "tbl_df")
@@ -13,7 +13,7 @@ test_that("summarize_survey calculates metrics for single question", {
 })
 
 test_that("summarize_survey calculates metrics for multiple specific questions", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
   result <- summarize_survey(survey, scale_points = 5, questions = c("My work is meaningful", "I feel valued"))
 
   expect_s3_class(result, "tbl_df")
@@ -23,7 +23,7 @@ test_that("summarize_survey calculates metrics for multiple specific questions",
 })
 
 test_that("summarize_survey does not include value distributions", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
   result <- summarize_survey(survey, scale_points = 5, questions = "My work is meaningful")
 
   expect_false("value_counts" %in% names(result))
@@ -33,7 +33,7 @@ test_that("summarize_survey does not include value distributions", {
 })
 
 test_that("summarize_survey analyzes all questions", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
   result <- summarize_survey(survey, scale_points = 5)
 
   expect_s3_class(result, "tbl_df")
@@ -42,7 +42,7 @@ test_that("summarize_survey analyzes all questions", {
 })
 
 test_that("get_response_dist returns distribution with expanded columns", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
   result <- get_response_dist(survey)
 
   expect_s3_class(result, "tbl_df")
@@ -54,7 +54,7 @@ test_that("get_response_dist returns distribution with expanded columns", {
 })
 
 test_that("get_response_dist works for specific questions", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
   result <- get_response_dist(survey, questions = "My work is meaningful")
 
   expect_s3_class(result, "tbl_df")
@@ -65,7 +65,7 @@ test_that("get_response_dist works for specific questions", {
 })
 
 test_that("get_response_dist throws error for non-existent question", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
 
   expect_error(
     get_response_dist(survey, questions = "Non-existent question"),
@@ -74,7 +74,7 @@ test_that("get_response_dist throws error for non-existent question", {
 })
 
 test_that("summarize_survey throws error for non-existent question", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
 
   expect_error(
     summarize_survey(survey, scale_points = 5, questions = "Non-existent question"),
@@ -83,7 +83,7 @@ test_that("summarize_survey throws error for non-existent question", {
 })
 
 test_that("compare_cycles requires at least two surveys", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
 
   expect_error(
     compare_cycles(survey),
@@ -92,7 +92,7 @@ test_that("compare_cycles requires at least two surveys", {
 })
 
 test_that("get_correlations returns long format by default", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
   result <- get_correlations(survey)
 
   expect_s3_class(result, "tbl_df")
@@ -110,7 +110,7 @@ test_that("get_correlations returns long format by default", {
 })
 
 test_that("get_correlations returns matrix format", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
   result <- get_correlations(survey, format = "matrix")
 
   expect_true(is.matrix(result))
@@ -120,7 +120,7 @@ test_that("get_correlations returns matrix format", {
 })
 
 test_that("get_correlations supports different correlation methods", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
 
   spearman <- get_correlations(survey, method = "spearman")
   pearson <- get_correlations(survey, method = "pearson")
@@ -132,7 +132,7 @@ test_that("get_correlations supports different correlation methods", {
 })
 
 test_that("get_correlations validates method parameter", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
 
   expect_error(
     get_correlations(survey, method = "invalid"),
@@ -141,7 +141,7 @@ test_that("get_correlations validates method parameter", {
 })
 
 test_that("get_correlations validates format parameter", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
 
   expect_error(
     get_correlations(survey, format = "invalid"),
@@ -150,14 +150,14 @@ test_that("get_correlations validates format parameter", {
 })
 
 test_that("get_correlations diagonal is 1.0 in matrix format", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
   result <- get_correlations(survey, format = "matrix")
 
   expect_equal(unname(diag(result)), c(1.0, 1.0))
 })
 
 test_that("extract_survey_factors requires psych package", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
 
   # Only test if psych is not installed
   if (!requireNamespace("psych", quietly = TRUE)) {
@@ -180,7 +180,7 @@ test_that("extract_survey_factors requires psych package", {
 })
 
 test_that("extract_survey_factors validates rotation parameter", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
 
   skip_if_not_installed("psych")
 
@@ -191,7 +191,7 @@ test_that("extract_survey_factors validates rotation parameter", {
 })
 
 test_that("extract_survey_factors validates fm parameter", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
 
   skip_if_not_installed("psych")
 
@@ -202,7 +202,7 @@ test_that("extract_survey_factors validates fm parameter", {
 })
 
 test_that("extract_survey_factors works with different rotations", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
 
   skip_if_not_installed("psych")
 
@@ -216,7 +216,7 @@ test_that("extract_survey_factors works with different rotations", {
 })
 
 test_that("search_comments returns tibble with correct columns", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
   result <- search_comments(survey, "work")
 
   expect_s3_class(result, "tbl_df")
@@ -224,7 +224,7 @@ test_that("search_comments returns tibble with correct columns", {
 })
 
 test_that("search_comments fuzzy match is case-insensitive", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
   lower  <- search_comments(survey, "recognition")
   upper  <- search_comments(survey, "RECOGNITION")
 
@@ -233,7 +233,7 @@ test_that("search_comments fuzzy match is case-insensitive", {
 })
 
 test_that("search_comments exact match is case-sensitive", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
   result_match    <- search_comments(survey, "Great", exact = TRUE)
   result_no_match <- search_comments(survey, "great", exact = TRUE)
 
@@ -242,7 +242,7 @@ test_that("search_comments exact match is case-sensitive", {
 })
 
 test_that("search_comments exact match finds literal substring", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
   result <- search_comments(survey, "work", exact = TRUE)
 
   expect_gt(nrow(result), 0)
@@ -250,7 +250,7 @@ test_that("search_comments exact match finds literal substring", {
 })
 
 test_that("search_comments returns empty tibble when no matches found", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
   result <- search_comments(survey, "zzznomatchzzz")
 
   expect_s3_class(result, "tbl_df")
@@ -259,7 +259,7 @@ test_that("search_comments returns empty tibble when no matches found", {
 })
 
 test_that("search_comments fuzzy match catches minor spelling differences", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
   # "growht" is a typo of "growth" - should still match "growth opportunities"
   result_typo  <- search_comments(survey, "growht", max_distance = 0.3)
   result_exact <- search_comments(survey, "growth")
@@ -270,7 +270,7 @@ test_that("search_comments fuzzy match catches minor spelling differences", {
 })
 
 test_that("search_comments can find matches across multiple questions", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
   # "Accomplishment" appears as a topic in question 1; "recognition" appears in question 2
   result <- search_comments(survey, "job")
 
@@ -280,7 +280,7 @@ test_that("search_comments can find matches across multiple questions", {
 })
 
 test_that("search_comments validates query input", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
 
   expect_error(search_comments(survey, ""),           "non-empty")
   expect_error(search_comments(survey, 123),          "non-empty character")
@@ -289,7 +289,7 @@ test_that("search_comments validates query input", {
 })
 
 test_that("split_survey_data returns a named list with two elements", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
   result <- split_survey_data(survey)
 
   expect_type(result, "list")
@@ -297,12 +297,12 @@ test_that("split_survey_data returns a named list with two elements", {
 })
 
 test_that("split_survey_data quantitative contains standard cols and response cols only", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
   quant  <- split_survey_data(survey)$quantitative
 
   expect_s3_class(quant, "tbl_df")
   # Standard columns present
-  expect_true("EMP ID" %in% names(quant))
+  expect_true("EXID" %in% names(quant))
   expect_true("First Name" %in% names(quant))
   # Numeric response columns present
   expect_true("My work is meaningful" %in% names(quant))
@@ -313,13 +313,13 @@ test_that("split_survey_data quantitative contains standard cols and response co
   expect_false(any(grepl("_SENSITIVE_COMMENT_FLAG$", names(quant))))
 })
 
-test_that("split_survey_data qualitative contains EMP ID and comment cols only", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+test_that("split_survey_data qualitative contains emp ID and comment cols only", {
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
   qual   <- split_survey_data(survey)$qualitative
 
   expect_s3_class(qual, "tbl_df")
   # EMP ID retained for joining
-  expect_true("EMP ID" %in% names(qual))
+  expect_true("EXID" %in% names(qual))
   # Comment and topic columns present
   expect_true(any(grepl("_COMMENT$", names(qual))))
   expect_true(any(grepl("_COMMENT_TOPICS$", names(qual))))
@@ -331,17 +331,17 @@ test_that("split_survey_data qualitative contains EMP ID and comment cols only",
 })
 
 test_that("split_survey_data outputs have the same number of rows as input", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
   parts  <- split_survey_data(survey)
 
   expect_equal(nrow(parts$quantitative), nrow(survey$data))
   expect_equal(nrow(parts$qualitative),  nrow(survey$data))
 })
 
-test_that("split_survey_data outputs can be rejoined on EMP ID", {
-  survey   <- read_glint_survey("fixtures/sample_survey.csv")
+test_that("split_survey_data outputs can be rejoined on emp ID", {
+  survey   <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
   parts    <- split_survey_data(survey)
-  rejoined <- dplyr::left_join(parts$quantitative, parts$qualitative, by = "EMP ID")
+  rejoined <- dplyr::left_join(parts$quantitative, parts$qualitative, by = "EXID")
 
   expect_equal(nrow(rejoined), nrow(survey$data))
   expect_true("My work is meaningful" %in% names(rejoined))
@@ -349,9 +349,9 @@ test_that("split_survey_data outputs can be rejoined on EMP ID", {
 })
 
 test_that("split_survey_data works on a plain data frame as well as glint_survey", {
-  survey      <- read_glint_survey("fixtures/sample_survey.csv")
+  survey      <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
   result_obj  <- split_survey_data(survey)
-  result_df   <- split_survey_data(survey$data)
+  result_df   <- split_survey_data(survey$data, emp_id_col = "EXID")
 
   expect_equal(names(result_obj$quantitative), names(result_df$quantitative))
   expect_equal(names(result_obj$qualitative),  names(result_df$qualitative))

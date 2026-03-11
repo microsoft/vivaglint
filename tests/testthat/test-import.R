@@ -1,5 +1,5 @@
 test_that("read_glint_survey reads valid CSV correctly", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
 
   expect_s3_class(survey, "glint_survey")
   expect_type(survey, "list")
@@ -17,7 +17,7 @@ test_that("read_glint_survey validates standard columns", {
   )
 
   expect_error(
-    read_glint_survey(temp_file),
+    read_glint_survey(temp_file, emp_id_col = "EXID"),
     "Missing required standard column"
   )
 
@@ -25,14 +25,14 @@ test_that("read_glint_survey validates standard columns", {
 })
 
 test_that("read_glint_survey parses dates correctly", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
 
   expect_s3_class(survey$data$`Survey Cycle Completion Date`, "POSIXct")
   expect_s3_class(survey$data$`Survey Cycle Sent Date`, "POSIXct")
 })
 
 test_that("extract_questions returns correct structure", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
   questions <- extract_questions(survey)
 
   expect_s3_class(questions, "tbl_df")
@@ -44,7 +44,7 @@ test_that("extract_questions returns correct structure", {
 
 test_that("read_glint_survey throws error for missing file", {
   expect_error(
-    read_glint_survey("nonexistent_file.csv"),
+    read_glint_survey("nonexistent_file.csv", emp_id_col = "EXID"),
     "File not found"
   )
 })
@@ -54,7 +54,7 @@ test_that("validate_glint_structure detects incomplete question sets", {
   temp_file <- tempfile(fileext = ".csv")
   writeLines(
     paste(
-      "Question1,Question1_COMMENT,First Name,Last Name,Email,Status,EMP ID,Manager ID,",
+      "Question1,Question1_COMMENT,First Name,Last Name,Email,Status,EXID,Manager ID,",
       "Survey Cycle Completion Date,Survey Cycle Sent Date\n",
       "1,comment,John,Doe,john@example.com,ACTIVE,e001,m001,15-01-2024 10:30,10-01-2024 08:00",
       sep = ""
@@ -63,7 +63,7 @@ test_that("validate_glint_structure detects incomplete question sets", {
   )
 
   expect_error(
-    read_glint_survey(temp_file),
+    read_glint_survey(temp_file, emp_id_col = "EXID"),
     "Incomplete question column"
   )
 

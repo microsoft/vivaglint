@@ -4,7 +4,7 @@
 \alias{compare_cycles}
 \title{Compare Survey Cycles}
 \usage{
-compare_cycles(..., scale_points, cycle_names = NULL)
+compare_cycles(..., scale_points, cycle_names = NULL, plot = FALSE)
 }
 \arguments{
 \item{...}{Two or more glint_survey objects or data frames to compare}
@@ -13,6 +13,10 @@ compare_cycles(..., scale_points, cycle_names = NULL)
 
 \item{cycle_names}{Optional character vector of names for each cycle.
 If not provided, will use "Cycle 1", "Cycle 2", etc.}
+
+\item{plot}{Logical. If \code{TRUE}, prints a line chart of Glint Score over
+cycles (one line per question) and returns the data invisibly. Requires
+\pkg{ggplot2}. Default: \code{FALSE}.}
 }
 \value{
 A tibble with one row per question-cycle combination containing:
@@ -30,6 +34,8 @@ the previous cycle (NA for the first cycle)}
 \item{glint_score_change_from_previous}{Change in Glint Score (0-100
 scale) from the previous cycle (NA for the first cycle)}
 }
+When \code{plot = TRUE}, the same tibble is returned invisibly after
+printing the plot.
 }
 \description{
 Compares question-level metrics across multiple survey cycles, calculating
@@ -45,5 +51,10 @@ comparison <- compare_cycles(survey1, survey2, survey3,
                               scale_points = 5,
                               cycle_names = c("Q1 2023", "Q2 2023", "Q3 2023"))
 print(comparison)
+
+# With trend chart
+compare_cycles(survey1, survey2, survey3, scale_points = 5,
+               cycle_names = c("Q1 2023", "Q2 2023", "Q3 2023"),
+               plot = TRUE)
 }
 }

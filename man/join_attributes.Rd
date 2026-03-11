@@ -4,7 +4,7 @@
 \alias{join_attributes}
 \title{Join Employee Attributes to Survey Data}
 \usage{
-join_attributes(survey, attribute_source, emp_id_col = "EMP ID")
+join_attributes(survey, attribute_source, emp_id_col = NULL)
 }
 \arguments{
 \item{survey}{A \code{glint_survey} object or data frame containing survey data}
@@ -13,9 +13,12 @@ join_attributes(survey, attribute_source, emp_id_col = "EMP ID")
 a data frame containing employee attributes. All columns are coerced to
 character to avoid type conflicts during joining.}
 
-\item{emp_id_col}{Character string specifying the employee ID column name in
-the attribute data (default: \code{"EMP ID"}). The survey data must contain
-a column named \code{"EMP ID"}.}
+\item{emp_id_col}{Character string specifying the employee ID column name.
+Must match the column name in both the survey data and the attribute data.
+When \code{survey} is a \code{glint_survey} object this defaults to
+\code{survey$metadata$emp_id_col} (set at import via
+\code{read_glint_survey()}), so you can omit this argument if you loaded
+the survey with the correct \code{emp_id_col}.}
 }
 \value{
 If \code{survey} is a \code{glint_survey} object, returns an enriched
@@ -24,9 +27,8 @@ the names of all joined attribute columns stored in
 \code{$metadata$attribute_cols}. If \code{survey} is a plain data frame,
 returns the joined data frame.
 
-Respondents whose \code{EMP ID} has no match in the attribute data will
-have \code{NA} for all attribute columns; a message is emitted indicating
-how many were affected.
+Respondents with no match in the attribute data will have \code{NA} for all
+attribute columns; a message is emitted indicating how many were affected.
 }
 \description{
 Reads employee attribute data from a CSV file or data frame and joins it to

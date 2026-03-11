@@ -1,5 +1,5 @@
 test_that("pivot_long with data_type='all' creates correct format", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
   long_data <- pivot_long(survey, data_type = "all")
 
   expect_s3_class(long_data, "tbl_df")
@@ -10,25 +10,26 @@ test_that("pivot_long with data_type='all' creates correct format", {
 })
 
 test_that("pivot_long includes standard columns by default", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
   long_data <- pivot_long(survey)
 
-  expect_true("EMP ID" %in% names(long_data))
+  expect_true("EXID" %in% names(long_data))
   expect_true("Manager ID" %in% names(long_data))
   expect_true("First Name" %in% names(long_data))
+
 })
 
 test_that("pivot_long can exclude standard columns", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
   long_data <- pivot_long(survey, include_standard_cols = FALSE)
 
-  expect_false("EMP ID" %in% names(long_data))
+  expect_false("EXID" %in% names(long_data))
   expect_false("Manager ID" %in% names(long_data))
   expect_true("question" %in% names(long_data))
 })
 
 test_that("pivot_long with data_type='comments' filters empty comments by default", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
   comments <- pivot_long(survey, data_type = "comments")
 
   expect_s3_class(comments, "tbl_df")
@@ -36,7 +37,7 @@ test_that("pivot_long with data_type='comments' filters empty comments by defaul
 })
 
 test_that("pivot_long with data_type='comments' can include empty comments", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
   all_comments <- pivot_long(survey, data_type = "comments", include_empty = TRUE)
 
   expect_s3_class(all_comments, "tbl_df")
@@ -44,17 +45,17 @@ test_that("pivot_long with data_type='comments' can include empty comments", {
 })
 
 test_that("pivot_long includes respondent metadata", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
   comments <- pivot_long(survey, data_type = "comments")
 
   expect_true("First Name" %in% names(comments))
   expect_true("Last Name" %in% names(comments))
   expect_true("Email" %in% names(comments))
-  expect_true("EMP ID" %in% names(comments))
+  expect_true("EXID" %in% names(comments))
 })
 
 test_that("pivot_long with data_type='both' returns list with two tibbles", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
   result <- pivot_long(survey, data_type = "both")
 
   expect_type(result, "list")
@@ -67,7 +68,7 @@ test_that("pivot_long with data_type='both' returns list with two tibbles", {
 })
 
 test_that("pivot_long validates data_type parameter", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
 
   expect_error(
     pivot_long(survey, data_type = "invalid"),

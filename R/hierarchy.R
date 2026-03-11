@@ -50,16 +50,21 @@
 #' aggregate_by_manager(survey, scale_points = 5, emp_id_col = "EMP ID",
 #'                      manager_id_col = "Manager ID", plot = TRUE)
 #' }
-aggregate_by_manager <- function(survey, scale_points, emp_id_col,
+aggregate_by_manager <- function(survey, scale_points, emp_id_col = NULL,
                                  manager_id_col, full_tree = FALSE,
                                  plot = FALSE) {
   if (plot) .check_ggplot2()
   if (inherits(survey, "glint_survey")) {
+    emp_id_col <- emp_id_col %||% survey$metadata$emp_id_col
     data <- survey$data
     questions <- survey$metadata$questions
   } else {
     data <- survey
     questions <- extract_questions(data)
+  }
+
+  if (is.null(emp_id_col)) {
+    stop("emp_id_col must be specified when survey is a plain data frame")
   }
 
   managers <- data %>%
@@ -88,7 +93,7 @@ aggregate_by_manager <- function(survey, scale_points, emp_id_col,
     team_data <- data %>%
       dplyr::filter(.data[[emp_id_col]] %in% team_members)
 
-    question_results <- summarize_survey(team_data, scale_points = scale_points, questions = "all")
+    question_results <- summarize_survey(team_data, scale_points = scale_points, questions = "all", emp_id_col = emp_id_col)
     question_results$manager_id <- mgr_id
     question_results$team_size <- length(team_members)
 

@@ -8,7 +8,8 @@ get_correlations(
   survey,
   method = "pearson",
   format = "long",
-  use = "pairwise.complete.obs"
+  use = "pairwise.complete.obs",
+  plot = FALSE
 )
 }
 \arguments{
@@ -23,6 +24,11 @@ correlation matrix}
 
 \item{use}{Character string indicating how to handle missing values, passed to
 cor() function (default: "pairwise.complete.obs")}
+
+\item{plot}{Logical. If \code{TRUE}, prints a correlation heatmap and returns
+the data invisibly. Only supported when \code{format = "long"} (the
+default); ignored with a warning when \code{format = "matrix"}. Requires
+\pkg{ggplot2}. Default: \code{FALSE}.}
 }
 \value{
 If format = "long", a tibble with columns:
@@ -33,7 +39,9 @@ If format = "long", a tibble with columns:
 \item{p_value}{P-value for test of correlation significance}
 \item{n}{Number of complete pairs used in calculation}
 }
-If format = "matrix", a matrix with questions as rows and columns
+If format = "matrix", a matrix with questions as rows and columns.
+When \code{plot = TRUE} and \code{format = "long"}, the tibble is returned
+invisibly after printing the plot.
 }
 \description{
 Calculates correlations between all question response columns in the survey.
@@ -51,5 +59,8 @@ correlations_spearman <- get_correlations(survey, method = "spearman")
 
 # Get correlation matrix
 cor_matrix <- get_correlations(survey, format = "matrix")
+
+# With correlation heatmap
+get_correlations(survey, plot = TRUE)
 }
 }

@@ -4,10 +4,17 @@
 \alias{read_glint_survey}
 \title{Read Viva Glint Survey Data}
 \usage{
-read_glint_survey(file_path, encoding = "UTF-8")
+read_glint_survey(file_path, emp_id_col, encoding = "UTF-8")
 }
 \arguments{
 \item{file_path}{Character string specifying the path to the CSV file}
+
+\item{emp_id_col}{Character string specifying the name of the employee ID
+column in the survey export (e.g., \code{"Employee ID"},
+\code{"EmployeeID"}, \code{"emp_id"}). The column name varies by
+organization. The value is stored in \code{survey$metadata$emp_id_col}
+and used automatically by downstream functions so you do not need to
+repeat it on every call.}
 
 \item{encoding}{Character string specifying file encoding (default: "UTF-8")}
 }

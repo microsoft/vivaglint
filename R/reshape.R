@@ -53,15 +53,21 @@ pivot_long <- function(survey, data_type = "all", include_empty = FALSE, include
   }
 
   if (inherits(survey, "glint_survey")) {
+    emp_id_col <- survey$metadata$emp_id_col
     data <- survey$data
     questions <- survey$metadata$questions
   } else {
+    emp_id_col <- NULL
     data <- survey
     questions <- extract_questions(data)
   }
+  if (is.null(emp_id_col)) {
+    stop("emp_id_col could not be determined. Load your survey with read_glint_survey() and specify emp_id_col.")
+  }
 
-  standard_cols <- get_standard_columns()
-  standard_data <- data[, standard_cols, drop = FALSE]
+  standard_cols <- get_standard_columns(emp_id_col)
+  present_standard_cols <- intersect(standard_cols, names(data))
+  standard_data <- data[, present_standard_cols, drop = FALSE]
 
   long_data <- purrr::map_dfr(seq_len(nrow(questions)), function(i) {
     q <- questions[i, ]

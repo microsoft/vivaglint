@@ -4,10 +4,15 @@
 \alias{extract_questions}
 \title{Extract Questions from Glint Survey}
 \usage{
-extract_questions(data)
+extract_questions(data, emp_id_col = NULL)
 }
 \arguments{
 \item{data}{A data frame or glint_survey object containing survey data}
+
+\item{emp_id_col}{Character string specifying the employee ID column name.
+When \code{data} is a \code{glint_survey} object this is resolved
+automatically from \code{data$metadata$emp_id_col}. Required when
+\code{data} is a plain data frame.}
 }
 \value{
 A tibble with one row per question containing:

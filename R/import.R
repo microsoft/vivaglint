@@ -5,6 +5,12 @@
 #' into a structured format ready for analysis.
 #'
 #' @param file_path Character string specifying the path to the CSV file
+#' @param emp_id_col Character string specifying the name of the employee ID
+#'   column in the survey export (e.g., \code{"Employee ID"},
+#'   \code{"EmployeeID"}, \code{"emp_id"}). The column name varies by
+#'   organization. The value is stored in \code{survey$metadata$emp_id_col}
+#'   and used automatically by downstream functions so you do not need to
+#'   repeat it on every call.
 #' @param encoding Character string specifying file encoding (default: "UTF-8")
 #'
 #' @return A \code{glint_survey} object (an S3 class extending \code{list}) with
@@ -27,7 +33,7 @@
 #' head(survey$data)
 #' survey$metadata$questions
 #' }
-read_glint_survey <- function(file_path, encoding = "UTF-8") {
+read_glint_survey <- function(file_path, emp_id_col, encoding = "UTF-8") {
   if (!file.exists(file_path)) {
     stop(sprintf(
       "File not found: '%s'\nPlease check that the file path is correct.",
@@ -51,9 +57,9 @@ read_glint_survey <- function(file_path, encoding = "UTF-8") {
     }
   )
 
-  validate_glint_structure(data)
+  validate_glint_structure(data, emp_id_col)
 
-  standard_cols <- get_standard_columns()
+  standard_cols <- get_standard_columns(emp_id_col)
 
   date_cols <- c("Survey Cycle Completion Date", "Survey Cycle Sent Date")
   for (col in date_cols) {
@@ -72,10 +78,11 @@ read_glint_survey <- function(file_path, encoding = "UTF-8") {
     }
   }
 
-  questions_df <- extract_questions(data)
+  questions_df <- extract_questions(data, emp_id_col)
 
   metadata <- list(
     standard_columns = standard_cols,
+    emp_id_col = emp_id_col,
     questions = questions_df,
     n_respondents = nrow(data),
     n_questions = nrow(questions_df),
@@ -98,23 +105,26 @@ read_glint_survey <- function(file_path, encoding = "UTF-8") {
 #' Viva Glint export structure. Throws detailed, human-readable errors if validation fails.
 #'
 #' @param data A data frame to validate
+#' @param emp_id_col Character string specifying the employee ID column name
 #'
 #' @return NULL (invisibly) if validation passes, otherwise throws an error
 #'
 #' @keywords internal
-validate_glint_structure <- function(data) {
-  standard_cols <- get_standard_columns()
-  missing_cols <- setdiff(standard_cols, names(data))
+validate_glint_structure <- function(data, emp_id_col) {
+  required_cols <- c("First Name", "Last Name", "Email", "Status", emp_id_col,
+                     "Survey Cycle Completion Date", "Survey Cycle Sent Date")
+  missing_cols <- setdiff(required_cols, names(data))
 
   if (length(missing_cols) > 0) {
     stop(sprintf(
-      "Missing required standard column(s): %s\n\nYour CSV file must contain all of the following standard Viva Glint columns:\n  %s\n\nPlease ensure you are using a complete Viva Glint survey export.",
+      "Missing required standard column(s): %s\n\nYour CSV file must contain all of the following standard Viva Glint columns:\n%s\n\nPlease ensure you are using a complete Viva Glint survey export.",
       paste0("'", missing_cols, "'", collapse = ", "),
-      paste0("  - ", standard_cols, collapse = "\n")
+      paste0("  - ", required_cols, collapse = "\n")
     ))
   }
 
-  question_cols <- setdiff(names(data), standard_cols)
+  all_standard_cols <- get_standard_columns(emp_id_col)
+  question_cols <- setdiff(names(data), all_standard_cols)
 
   if (length(question_cols) == 0) {
     stop(
@@ -197,6 +207,10 @@ validate_glint_structure <- function(data) {
 #' Parses column names to extract unique questions and their associated column names.
 #'
 #' @param data A data frame or glint_survey object containing survey data
+#' @param emp_id_col Character string specifying the employee ID column name.
+#'   When \code{data} is a \code{glint_survey} object this is resolved
+#'   automatically from \code{data$metadata$emp_id_col}. Required when
+#'   \code{data} is a plain data frame.
 #'
 #' @return A tibble with one row per question containing:
 #'   \describe{
@@ -215,12 +229,16 @@ validate_glint_structure <- function(data) {
 #' questions <- extract_questions(survey)
 #' print(questions)
 #' }
-extract_questions <- function(data) {
+extract_questions <- function(data, emp_id_col = NULL) {
   if (inherits(data, "glint_survey")) {
+    emp_id_col <- data$metadata$emp_id_col %||% emp_id_col
     data <- data$data
   }
+  if (is.null(emp_id_col)) {
+    stop("emp_id_col must be specified. When loading with read_glint_survey(), pass emp_id_col to store it automatically.")
+  }
 
-  standard_cols <- get_standard_columns()
+  standard_cols <- get_standard_columns(emp_id_col)
   question_cols <- setdiff(names(data), standard_cols)
   question_stems <- unique(sapply(question_cols, get_question_stem))
 
@@ -252,6 +270,10 @@ extract_questions <- function(data) {
 #'   character to avoid type conflicts during joining.
 #' @param emp_id_col Character string specifying the employee ID column name.
 #'   Must match the column name in both the survey data and the attribute data.
+#'   When \code{survey} is a \code{glint_survey} object this defaults to
+#'   \code{survey$metadata$emp_id_col} (set at import via
+#'   \code{read_glint_survey()}), so you can omit this argument if you loaded
+#'   the survey with the correct \code{emp_id_col}.
 #'
 #' @return If \code{survey} is a \code{glint_survey} object, returns an enriched
 #'   \code{glint_survey} with the attribute columns appended to \code{$data} and
@@ -285,13 +307,18 @@ extract_questions <- function(data) {
 #' results_na <- analyze_by_attributes(na_only, scale_points = 5,
 #'                                     attribute_cols = "Department")
 #' }
-join_attributes <- function(survey, attribute_source, emp_id_col) {
+join_attributes <- function(survey, attribute_source, emp_id_col = NULL) {
   if (inherits(survey, "glint_survey")) {
+    emp_id_col <- emp_id_col %||% survey$metadata$emp_id_col
     data <- survey$data
   } else if (is.data.frame(survey)) {
     data <- survey
   } else {
     stop("survey must be a glint_survey object or a data frame")
+  }
+
+  if (is.null(emp_id_col)) {
+    stop("emp_id_col must be specified when survey is a plain data frame (it cannot be resolved from metadata)")
   }
 
   if (!emp_id_col %in% names(data)) {

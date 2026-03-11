@@ -4,15 +4,31 @@
 \alias{aggregate_by_manager}
 \title{Aggregate Responses by Manager}
 \usage{
-aggregate_by_manager(survey, scale_points, full_tree = FALSE)
+aggregate_by_manager(
+  survey,
+  scale_points,
+  emp_id_col = NULL,
+  manager_id_col,
+  full_tree = FALSE,
+  plot = FALSE
+)
 }
 \arguments{
 \item{survey}{A glint_survey object or data frame containing survey data}
 
 \item{scale_points}{Integer specifying the number of scale points (2-11)}
 
+\item{emp_id_col}{Character string specifying the employee ID column name}
+
+\item{manager_id_col}{Character string specifying the manager ID column name}
+
 \item{full_tree}{Logical indicating whether to include full subtree
 (all indirect reports) or only direct reports (default: FALSE)}
+
+\item{plot}{Logical. If \code{TRUE}, prints a ranked lollipop chart of team
+Glint Scores by manager and returns the data invisibly. When multiple
+questions are present the chart is faceted by question. Requires
+\pkg{ggplot2}. Default: \code{FALSE}.}
 }
 \value{
 A tibble with one row per manager-question combination containing:
@@ -27,6 +43,8 @@ statistics for this manager's team on this question}
 \item{pct_favorable, pct_neutral, pct_unfavorable}{Favorability
 percentages for this manager's team on this question}
 }
+When \code{plot = TRUE}, the same tibble is returned invisibly after
+printing the plot.
 }
 \description{
 Rolls up survey responses to the manager level, calculating the same
@@ -37,9 +55,18 @@ metrics as summarize_survey() for each manager's team.
 survey <- read_glint_survey("survey_export.csv")
 
 # Direct reports only
-manager_summary <- aggregate_by_manager(survey, scale_points = 5)
+manager_summary <- aggregate_by_manager(survey, scale_points = 5,
+                                        emp_id_col = "EMP ID",
+                                        manager_id_col = "Manager ID")
 
 # Full organizational tree
-manager_summary_full <- aggregate_by_manager(survey, scale_points = 5, full_tree = TRUE)
+manager_summary_full <- aggregate_by_manager(survey, scale_points = 5,
+                                             emp_id_col = "EMP ID",
+                                             manager_id_col = "Manager ID",
+                                             full_tree = TRUE)
+
+# With ranked dot plot
+aggregate_by_manager(survey, scale_points = 5, emp_id_col = "EMP ID",
+                     manager_id_col = "Manager ID", plot = TRUE)
 }
 }

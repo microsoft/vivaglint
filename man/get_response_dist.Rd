@@ -4,13 +4,17 @@
 \alias{get_response_dist}
 \title{Get Response Distribution}
 \usage{
-get_response_dist(survey, questions = "all")
+get_response_dist(survey, questions = "all", plot = FALSE)
 }
 \arguments{
 \item{survey}{A glint_survey object or data frame containing survey data}
 
 \item{questions}{Character vector of question text(s) to analyze, or "all" to
 analyze all questions (default: "all")}
+
+\item{plot}{Logical. If \code{TRUE}, prints a stacked bar chart of response
+value distributions (red \eqn{\to} blue gradient) and returns the data
+invisibly. Requires \pkg{ggplot2}. Default: \code{FALSE}.}
 }
 \value{
 A tibble with one row per question containing:
@@ -19,6 +23,8 @@ A tibble with one row per question containing:
 \item{count_X}{Count of responses with value X (for each unique response value)}
 \item{pct_X}{Percentage of responses with value X (for each unique response value)}
 }
+When \code{plot = TRUE}, the same tibble is returned invisibly after
+printing the plot.
 }
 \description{
 Calculates the distribution of response values for survey questions, returning
@@ -34,5 +40,8 @@ dist <- get_response_dist(survey)
 # Get response distribution for specific questions
 dist_subset <- get_response_dist(survey,
   questions = c("My work is meaningful", "I feel valued"))
+
+# With distribution chart
+get_response_dist(survey, plot = TRUE)
 }
 }

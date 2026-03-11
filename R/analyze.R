@@ -46,7 +46,7 @@
 #' summarize_survey(survey, scale_points = 5, plot = TRUE)
 #' }
 summarize_survey <- function(survey, scale_points, questions = "all",
-                             plot = FALSE) {
+                             emp_id_col = NULL, plot = FALSE) {
   if (plot) .check_ggplot2()
   if (!scale_points %in% 2:11) {
     stop("scale_points must be an integer between 2 and 11")
@@ -55,11 +55,12 @@ summarize_survey <- function(survey, scale_points, questions = "all",
   favorability <- get_favorability_map(scale_points)
 
   if (inherits(survey, "glint_survey")) {
+    emp_id_col <- emp_id_col %||% survey$metadata$emp_id_col
     data <- survey$data
     all_questions <- survey$metadata$questions$question
   } else {
     data <- survey
-    all_questions <- extract_questions(survey)$question
+    all_questions <- extract_questions(survey, emp_id_col)$question
   }
 
   if (length(questions) == 1 && questions == "all") {
@@ -729,7 +730,7 @@ extract_survey_factors <- function(survey, n_factors = NULL, rotation = "oblimin
 #'                   emp_id_col = "EMP ID", term_date_col = "Termination Date",
 #'                   scale_points = 5, plot = TRUE)
 #' }
-analyze_attrition <- function(survey, attrition_file, emp_id_col, term_date_col,
+analyze_attrition <- function(survey, attrition_file, emp_id_col = NULL, term_date_col,
                               scale_points, time_periods = c(90, 180, 365),
                               attribute_cols = NULL, min_group_size = 5,
                               plot = FALSE) {
@@ -741,11 +742,16 @@ analyze_attrition <- function(survey, attrition_file, emp_id_col, term_date_col,
   favorability <- get_favorability_map(scale_points)
 
   if (inherits(survey, "glint_survey")) {
+    emp_id_col <- emp_id_col %||% survey$metadata$emp_id_col
     survey_data <- survey$data
     questions <- survey$metadata$questions$question
   } else {
     survey_data <- survey
     questions <- extract_questions(survey)$question
+  }
+
+  if (is.null(emp_id_col)) {
+    stop("emp_id_col must be specified when survey is a plain data frame")
   }
 
   if (!file.exists(attrition_file)) {
@@ -990,11 +996,19 @@ analyze_attrition <- function(survey, attrition_file, emp_id_col, term_date_col,
 #'                       emp_id_col = "EMP ID", plot = TRUE)
 #' }
 analyze_by_attributes <- function(survey, attribute_file = NULL, scale_points,
-                                 attribute_cols, emp_id_col,
+                                 attribute_cols, emp_id_col = NULL,
                                  min_group_size = 5, plot = FALSE) {
   if (plot) .check_ggplot2()
   if (!scale_points %in% 2:11) {
     stop("scale_points must be an integer between 2 and 11")
+  }
+
+  if (inherits(survey, "glint_survey")) {
+    emp_id_col <- emp_id_col %||% survey$metadata$emp_id_col
+  }
+
+  if (is.null(emp_id_col)) {
+    stop("emp_id_col must be specified when survey is a plain data frame")
   }
 
   if (!is.null(attribute_file)) {
@@ -1036,7 +1050,7 @@ analyze_by_attributes <- function(survey, attribute_file = NULL, scale_points,
 
   # Get question columns (excluding standard columns AND ALL joined attribute columns,
   # not just the ones used for grouping in this call)
-  standard_cols <- get_standard_columns()
+  standard_cols <- get_standard_columns(emp_id_col)
   all_cols <- names(survey_data)
   all_attr_cols <- if (inherits(survey, "glint_survey")) {
     survey$metadata$attribute_cols %||% attribute_cols
@@ -1058,7 +1072,7 @@ analyze_by_attributes <- function(survey, attribute_file = NULL, scale_points,
     group_data_survey <- group_data %>%
       dplyr::select(dplyr::all_of(c(standard_cols, question_cols)))
 
-    group_summary <- summarize_survey(group_data_survey, scale_points = scale_points, questions = "all")
+    group_summary <- summarize_survey(group_data_survey, scale_points = scale_points, questions = "all", emp_id_col = emp_id_col)
 
     group_summary <- dplyr::bind_cols(
       group_values,
@@ -1225,7 +1239,7 @@ search_comments <- function(survey, query, exact = FALSE, max_distance = 0.2) {
 #' @examples
 #' \dontrun{
 #' survey <- read_glint_survey("survey_export.csv")
-#' parts  <- split_survey_data(survey, emp_id_col = "EMP ID")
+#' parts  <- split_survey_data(survey)
 #'
 #' # Analyze numeric responses
 #' summary <- summarize_survey(parts$quantitative, scale_points = 5)
@@ -1233,15 +1247,20 @@ search_comments <- function(survey, query, exact = FALSE, max_distance = 0.2) {
 #' # Work with comments separately
 #' comments <- parts$qualitative
 #' }
-split_survey_data <- function(survey, emp_id_col) {
+split_survey_data <- function(survey, emp_id_col = NULL) {
   if (inherits(survey, "glint_survey")) {
+    emp_id_col <- emp_id_col %||% survey$metadata$emp_id_col
     data <- survey$data
   } else {
     data <- survey
   }
 
-  standard_cols <- get_standard_columns()
-  questions     <- extract_questions(data)
+  if (is.null(emp_id_col)) {
+    stop("emp_id_col could not be determined. Load your survey with read_glint_survey() and specify emp_id_col.")
+  }
+
+  standard_cols <- get_standard_columns(emp_id_col)
+  questions     <- extract_questions(data, emp_id_col)
 
   response_cols <- questions$response_col
   comment_cols  <- questions$comment_col[questions$comment_col %in% names(data)]

@@ -1,5 +1,5 @@
 test_that("analyze_by_attributes errors on nonexistent attribute_file", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
 
   expect_error(
     analyze_by_attributes(
@@ -13,7 +13,7 @@ test_that("analyze_by_attributes errors on nonexistent attribute_file", {
 })
 
 test_that("analyze_by_attributes validates emp_id_col", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
 
   # Create test attribute file
   attr_file <- tempfile(fileext = ".csv")
@@ -31,22 +31,22 @@ test_that("analyze_by_attributes validates emp_id_col", {
       attribute_file = attr_file,
       scale_points = 5,
       attribute_cols = "Department",
-      emp_id_col = "EMP ID"
+      emp_id_col = "EXID"
     ),
-    "Column 'EMP ID' not found in attribute data"
+    "Column 'EXID' not found in attribute data"
   )
 
   unlink(attr_file)
 })
 
 test_that("analyze_by_attributes validates attribute_cols", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
 
   # Create test attribute file
   attr_file <- tempfile(fileext = ".csv")
   readr::write_csv(
     dplyr::tibble(
-      `EMP ID` = c("e001", "e002", "e003", "e004", "e005"),
+      `EXID` = c("e001", "e002", "e003", "e004", "e005"),
       Department = c("Sales", "Sales", "Engineering", "Engineering", "HR")
     ),
     attr_file
@@ -66,13 +66,13 @@ test_that("analyze_by_attributes validates attribute_cols", {
 })
 
 test_that("analyze_by_attributes validates scale_points", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
 
   # Create test attribute file
   attr_file <- tempfile(fileext = ".csv")
   readr::write_csv(
     dplyr::tibble(
-      `EMP ID` = c("e001", "e002", "e003", "e004", "e005"),
+      `EXID` = c("e001", "e002", "e003", "e004", "e005"),
       Department = c("Sales", "Sales", "Engineering", "Engineering", "HR")
     ),
     attr_file
@@ -92,13 +92,13 @@ test_that("analyze_by_attributes validates scale_points", {
 })
 
 test_that("analyze_by_attributes works with single attribute", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
 
   # Create test attribute file
   attr_file <- tempfile(fileext = ".csv")
   readr::write_csv(
     dplyr::tibble(
-      `EMP ID` = c("e001", "e002", "e003", "e004", "e005"),
+      `EXID` = c("e001", "e002", "e003", "e004", "e005"),
       Department = c("Sales", "Sales", "Engineering", "Engineering", "Engineering")
     ),
     attr_file
@@ -129,13 +129,13 @@ test_that("analyze_by_attributes works with single attribute", {
 })
 
 test_that("analyze_by_attributes works with multiple attributes", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
 
   # Create test attribute file
   attr_file <- tempfile(fileext = ".csv")
   readr::write_csv(
     dplyr::tibble(
-      `EMP ID` = c("e001", "e002", "e003", "e004", "e005"),
+      `EXID` = c("e001", "e002", "e003", "e004", "e005"),
       Department = c("Sales", "Sales", "Engineering", "Engineering", "HR"),
       Gender = c("Male", "Female", "Male", "Female", "Male")
     ),
@@ -161,13 +161,13 @@ test_that("analyze_by_attributes works with multiple attributes", {
 })
 
 test_that("analyze_by_attributes respects min_group_size", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
 
   # Create test attribute file with one small group
   attr_file <- tempfile(fileext = ".csv")
   readr::write_csv(
     dplyr::tibble(
-      `EMP ID` = c("e001", "e002", "e003", "e004", "e005"),
+      `EXID` = c("e001", "e002", "e003", "e004", "e005"),
       Department = c("Sales", "Sales", "Sales", "Sales", "HR")
     ),
     attr_file
@@ -189,13 +189,13 @@ test_that("analyze_by_attributes respects min_group_size", {
 })
 
 test_that("analyze_by_attributes warns when no groups meet threshold", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
 
   # Create test attribute file with all small groups
   attr_file <- tempfile(fileext = ".csv")
   readr::write_csv(
     dplyr::tibble(
-      `EMP ID` = c("e001", "e002", "e003", "e004", "e005"),
+      `EXID` = c("e001", "e002", "e003", "e004", "e005"),
       Department = c("Sales", "Engineering", "HR", "Marketing", "Finance")
     ),
     attr_file
@@ -218,12 +218,12 @@ test_that("analyze_by_attributes warns when no groups meet threshold", {
 })
 
 test_that("analyze_by_attributes works with pre-joined survey (no attribute_file)", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
 
   attr_file <- tempfile(fileext = ".csv")
   readr::write_csv(
     dplyr::tibble(
-      `EMP ID` = c("e001", "e002", "e003", "e004", "e005"),
+      `EXID` = c("e001", "e002", "e003", "e004", "e005"),
       Department = c("Sales", "Sales", "Engineering", "Engineering", "Engineering")
     ),
     attr_file
@@ -246,12 +246,12 @@ test_that("analyze_by_attributes works with pre-joined survey (no attribute_file
 })
 
 test_that("join_attributes loads from file path", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
 
   attr_file <- tempfile(fileext = ".csv")
   readr::write_csv(
     dplyr::tibble(
-      `EMP ID` = c("e001", "e002", "e003", "e004", "e005"),
+      `EXID` = c("e001", "e002", "e003", "e004", "e005"),
       Department = c("Sales", "Sales", "Engineering", "Engineering", "HR")
     ),
     attr_file
@@ -267,10 +267,10 @@ test_that("join_attributes loads from file path", {
 })
 
 test_that("join_attributes loads from data frame", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
 
   attrs <- dplyr::tibble(
-    `EMP ID` = c("e001", "e002", "e003", "e004", "e005"),
+    `EXID` = c("e001", "e002", "e003", "e004", "e005"),
     Department = c("Sales", "Sales", "Engineering", "Engineering", "HR")
   )
 
@@ -282,7 +282,7 @@ test_that("join_attributes loads from data frame", {
 })
 
 test_that("join_attributes errors on nonexistent file", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
 
   expect_error(
     join_attributes(survey, "nonexistent_file.csv"),
@@ -291,7 +291,7 @@ test_that("join_attributes errors on nonexistent file", {
 })
 
 test_that("join_attributes errors when emp_id_col missing from attribute data", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
 
   attrs <- dplyr::tibble(
     `Wrong ID` = c("e001", "e002", "e003", "e004", "e005"),
@@ -299,17 +299,17 @@ test_that("join_attributes errors when emp_id_col missing from attribute data", 
   )
 
   expect_error(
-    join_attributes(survey, attrs, emp_id_col = "EMP ID"),
-    "Column 'EMP ID' not found in attribute data"
+    join_attributes(survey, attrs, emp_id_col = "EXID"),
+    "Column 'EXID' not found in attribute data"
   )
 })
 
 test_that("join_attributes warns on column overlap", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
 
   # Pre-join once so Department already exists
   attrs <- dplyr::tibble(
-    `EMP ID` = c("e001", "e002", "e003", "e004", "e005"),
+    `EXID` = c("e001", "e002", "e003", "e004", "e005"),
     Department = c("Sales", "Sales", "Engineering", "Engineering", "HR")
   )
   survey_enriched <- join_attributes(survey, attrs)
@@ -322,11 +322,11 @@ test_that("join_attributes warns on column overlap", {
 })
 
 test_that("join_attributes messages on unmatched respondents", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
 
   # Only 3 of 5 employees in attribute data
   attrs <- dplyr::tibble(
-    `EMP ID` = c("e001", "e002", "e003"),
+    `EXID` = c("e001", "e002", "e003"),
     Department = c("Sales", "Sales", "Engineering")
   )
 
@@ -337,14 +337,14 @@ test_that("join_attributes messages on unmatched respondents", {
 })
 
 test_that("join_attributes accumulates attribute_cols across multiple joins", {
-  survey <- read_glint_survey("fixtures/sample_survey.csv")
+  survey <- read_glint_survey("fixtures/sample_survey.csv", emp_id_col = "EXID")
 
   attrs1 <- dplyr::tibble(
-    `EMP ID` = c("e001", "e002", "e003", "e004", "e005"),
+    `EXID` = c("e001", "e002", "e003", "e004", "e005"),
     Department = c("Sales", "Sales", "Engineering", "Engineering", "HR")
   )
   attrs2 <- dplyr::tibble(
-    `EMP ID` = c("e001", "e002", "e003", "e004", "e005"),
+    `EXID` = c("e001", "e002", "e003", "e004", "e005"),
     Gender = c("Male", "Female", "Male", "Female", "Male")
   )
 

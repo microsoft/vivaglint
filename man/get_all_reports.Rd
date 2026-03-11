@@ -4,12 +4,16 @@
 \alias{get_all_reports}
 \title{Get All Reports for a Manager}
 \usage{
-get_all_reports(manager_id, data)
+get_all_reports(manager_id, data, emp_id_col, manager_id_col)
 }
 \arguments{
 \item{manager_id}{Character string of manager's employee ID}
 
-\item{data}{Data frame with survey data including EMP ID and Manager ID}
+\item{data}{Data frame with survey data}
+
+\item{emp_id_col}{Character string specifying the employee ID column name}
+
+\item{manager_id_col}{Character string specifying the manager ID column name}
 }
 \value{
 Character vector of employee IDs for all reports

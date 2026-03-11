@@ -4,10 +4,12 @@
 \alias{split_survey_data}
 \title{Split Survey Data into Quantitative and Qualitative Components}
 \usage{
-split_survey_data(survey)
+split_survey_data(survey, emp_id_col = NULL)
 }
 \arguments{
 \item{survey}{A glint_survey object or data frame containing survey data}
+
+\item{emp_id_col}{Character string specifying the employee ID column name}
 }
 \value{
 A named list with two elements:
@@ -15,16 +17,16 @@ A named list with two elements:
 \item{quantitative}{A tibble with all standard respondent columns plus
 one numeric response column per question. Comment, topic, and sensitive
 flag columns are excluded.}
-\item{qualitative}{A tibble with \code{EMP ID} plus the comment, topic,
-and sensitive flag columns for every question. Numeric response columns
-are excluded.}
+\item{qualitative}{A tibble with the employee ID column plus the comment,
+topic, and sensitive flag columns for every question. Numeric response
+columns are excluded.}
 }
 }
 \description{
 Separates a survey dataset into two data frames: one containing only numeric
 response data (for statistical analysis) and one containing only comment
-and topic data (for qualitative analysis). Both outputs retain \code{EMP ID}
-so they can be rejoined at any time.
+and topic data (for qualitative analysis). Both outputs retain the employee
+ID column so they can be rejoined at any time.
 }
 \examples{
 \dontrun{

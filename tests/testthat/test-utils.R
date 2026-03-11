@@ -34,12 +34,12 @@ test_that("parse_comment_topics throws error for invalid format", {
 })
 
 test_that("get_standard_columns returns expected columns", {
-  cols <- get_standard_columns()
+  cols <- get_standard_columns(emp_id_col = "EXID")
 
   expect_type(cols, "character")
   expect_length(cols, 8)
   expect_true("First Name" %in% cols)
-  expect_true("EMP ID" %in% cols)
+  expect_true("EXID" %in% cols)
   expect_true("Manager ID" %in% cols)
   expect_true("Survey Cycle Completion Date" %in% cols)
 })

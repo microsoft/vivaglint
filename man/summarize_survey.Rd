@@ -4,7 +4,7 @@
 \alias{summarize_survey}
 \title{Summarize Survey Questions}
 \usage{
-summarize_survey(survey, scale_points, questions = "all")
+summarize_survey(survey, scale_points, questions = "all", plot = FALSE)
 }
 \arguments{
 \item{survey}{A glint_survey object or data frame containing survey data}
@@ -13,6 +13,10 @@ summarize_survey(survey, scale_points, questions = "all")
 
 \item{questions}{Character vector of question text(s) to analyze, or "all" to
 analyze all questions (default: "all")}
+
+\item{plot}{Logical. If \code{TRUE}, prints a favorability stacked bar chart
+sorted by Glint Score and returns the data invisibly. Requires
+\pkg{ggplot2}. Default: \code{FALSE}.}
 }
 \value{
 A tibble with one row per question containing:
@@ -29,6 +33,8 @@ displayed in the Viva Glint UI: \code{round(((mean - 1) / (scale_points - 1)) * 
 \item{pct_neutral}{Percentage of responses classified as neutral}
 \item{pct_unfavorable}{Percentage of responses classified as unfavorable}
 }
+When \code{plot = TRUE}, the same tibble is returned invisibly after
+printing the plot.
 }
 \description{
 Calculates comprehensive metrics for survey questions, returning a summary
@@ -45,5 +51,8 @@ summary <- summarize_survey(survey, scale_points = 5)
 # Summarize specific questions
 summary_subset <- summarize_survey(survey, scale_points = 5,
   questions = c("My work is meaningful", "I feel valued"))
+
+# With favorability chart
+summarize_survey(survey, scale_points = 5, plot = TRUE)
 }
 }

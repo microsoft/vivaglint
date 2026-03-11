@@ -4,10 +4,12 @@
 \alias{validate_glint_structure}
 \title{Validate Glint Data Structure}
 \usage{
-validate_glint_structure(data)
+validate_glint_structure(data, emp_id_col)
 }
 \arguments{
 \item{data}{A data frame to validate}
+
+\item{emp_id_col}{Character string specifying the employee ID column name}
 }
 \value{
 NULL (invisibly) if validation passes, otherwise throws an error

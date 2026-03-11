@@ -9,8 +9,9 @@ analyze_by_attributes(
   attribute_file = NULL,
   scale_points,
   attribute_cols,
-  emp_id_col = "EMP ID",
-  min_group_size = 5
+  emp_id_col = NULL,
+  min_group_size = 5,
+  plot = FALSE
 )
 }
 \arguments{
@@ -28,10 +29,15 @@ survey must already contain the columns named in \code{attribute_cols}.}
 (e.g., \code{c("Department", "Gender", "Tenure Group")})}
 
 \item{emp_id_col}{Character string specifying the employee ID column name
-in the attribute data (default: \code{"EMP ID"})}
+in both the survey data and the attribute data}
 
 \item{min_group_size}{Integer specifying the minimum number of employees
 required for a group to be included in results (default: 5)}
+
+\item{plot}{Logical. If \code{TRUE}, prints a faceted dot plot of Glint
+Scores by attribute group (one facet per question) and returns the data
+invisibly. When multiple \code{attribute_cols} are supplied, only the first
+is plotted. Requires \pkg{ggplot2}. Default: \code{FALSE}.}
 }
 \value{
 A tibble with one row per attribute-group-question combination
@@ -44,6 +50,8 @@ Descriptive statistics for this group on this question}
 \item{pct_favorable, pct_neutral, pct_unfavorable}{Favorability
 percentages for this group on this question}
 }
+When \code{plot = TRUE}, the same tibble is returned invisibly after
+printing the plot.
 }
 \description{
 Aggregates survey responses by employee attributes (e.g., Department,
@@ -71,18 +79,20 @@ results <- analyze_by_attributes(
   survey,
   attribute_file = "employee_attributes.csv",
   scale_points = 5,
-  attribute_cols = "Department"
+  attribute_cols = "Department",
+  emp_id_col = "EMP ID"
 )
 
 # Option 2: pre-join with join_attributes(), then omit attribute_file
-survey_enriched <- join_attributes(survey, "employee_attributes.csv")
+survey_enriched <- join_attributes(survey, "employee_attributes.csv",
+                                   emp_id_col = "EMP ID")
 results <- analyze_by_attributes(survey_enriched, scale_points = 5,
-                                 attribute_cols = "Department")
+                                 attribute_cols = "Department",
+                                 emp_id_col = "EMP ID")
 
-# Option 2 makes filtering easy before analysis
-survey_na <- survey_enriched
-survey_na$data <- dplyr::filter(survey_enriched$data, Division == "North America")
-results_na <- analyze_by_attributes(survey_na, scale_points = 5,
-                                    attribute_cols = "Department")
+# With dot plot
+analyze_by_attributes(survey_enriched, scale_points = 5,
+                      attribute_cols = "Department",
+                      emp_id_col = "EMP ID", plot = TRUE)
 }
 }

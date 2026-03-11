@@ -7,12 +7,13 @@
 analyze_attrition(
   survey,
   attrition_file,
-  emp_id_col,
+  emp_id_col = NULL,
   term_date_col,
   scale_points,
   time_periods = c(90, 180, 365),
   attribute_cols = NULL,
-  min_group_size = 5
+  min_group_size = 5,
+  plot = FALSE
 )
 }
 \arguments{
@@ -37,6 +38,12 @@ already be joined to the survey via \code{join_attributes()}. When \code{NULL}
 \item{min_group_size}{Minimum number of employees required in an attribute group
 for it to be included in results (default: 5). Ignored when
 \code{attribute_cols = NULL}.}
+
+\item{plot}{Logical. If \code{TRUE}, prints a grouped bar chart of favorable
+vs. unfavorable attrition rates faceted by time period and returns the data
+invisibly. When \code{attribute_cols} is supplied, the first attribute
+column is used as an additional facet dimension. Requires \pkg{ggplot2}.
+Default: \code{FALSE}.}
 }
 \value{
 A tibble with one row per (attribute group)-question-time period
@@ -54,6 +61,8 @@ when \code{attribute_cols} is supplied)}
 \item{unfavorable_attrition}{Proportion who left within time period (unfavorable)}
 \item{attrition_ratio}{Ratio of unfavorable to favorable attrition rates}
 }
+When \code{plot = TRUE}, the same tibble is returned invisibly after
+printing the plot.
 }
 \description{
 Analyzes the relationship between survey responses and employee attrition,
@@ -84,5 +93,10 @@ attrition_by_dept <- analyze_attrition(
   attribute_cols = c("Department", "Gender"),
   min_group_size = 10
 )
+
+# With attrition chart
+analyze_attrition(survey, attrition_file = "attrition.csv",
+                  emp_id_col = "EMP ID", term_date_col = "Termination Date",
+                  scale_points = 5, plot = TRUE)
 }
 }
