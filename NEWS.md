@@ -1,6 +1,6 @@
 # vivaglint 0.1.0
 
-## Initial CRAN Release
+## Initial Release
 
 ### Core Functions
 
