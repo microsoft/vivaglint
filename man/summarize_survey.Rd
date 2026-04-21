@@ -4,7 +4,13 @@
 \alias{summarize_survey}
 \title{Summarize Survey Questions}
 \usage{
-summarize_survey(survey, scale_points, questions = "all", plot = FALSE)
+summarize_survey(
+  survey,
+  scale_points,
+  questions = "all",
+  emp_id_col = NULL,
+  plot = FALSE
+)
 }
 \arguments{
 \item{survey}{A glint_survey object or data frame containing survey data}
@@ -13,6 +19,8 @@ summarize_survey(survey, scale_points, questions = "all", plot = FALSE)
 
 \item{questions}{Character vector of question text(s) to analyze, or "all" to
 analyze all questions (default: "all")}
+
+\item{emp_id_col}{Character string specifying the employee ID column name}
 
 \item{plot}{Logical. If \code{TRUE}, prints a favorability stacked bar chart
 sorted by Glint Score and returns the data invisibly. Requires

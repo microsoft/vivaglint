@@ -51,6 +51,10 @@ rsconnect/
 # R project files
 *.Rproj
 
+# CRAN submission artifacts
+cran-comments.md
+CRAN-SUBMISSION
+
 # Claude
 .claude/
 

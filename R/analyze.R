@@ -8,6 +8,7 @@
 #' @param scale_points Integer specifying the number of scale points (2-11)
 #' @param questions Character vector of question text(s) to analyze, or "all" to
 #'   analyze all questions (default: "all")
+#' @param emp_id_col Character string specifying the employee ID column name
 #' @param plot Logical. If \code{TRUE}, prints a favorability stacked bar chart
 #'   sorted by Glint Score and returns the data invisibly. Requires
 #'   \pkg{ggplot2}. Default: \code{FALSE}.
