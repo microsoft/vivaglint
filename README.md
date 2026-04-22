@@ -4,21 +4,29 @@ R package for analyzing Viva Glint survey data with comprehensive statistical to
 
 ## Overview
 
-**vivaglint** simplifies the analysis of Microsoft Viva Glint survey exports by providing a complete toolkit for data import, validation, statistical analysis, and reporting. The package handles the complexities of Glint's data structure and offers intuitive functions for common analysis tasks.
+**'vivaglint'** simplifies the analysis of 'Viva Glint' survey exports by providing a complete toolkit for data import, validation, statistical analysis, and reporting. The package handles the complexities of the 'Viva Glint' data structure and offers intuitive functions for common analysis tasks.
 
 ## Installation
 
-Install the package directly from GitHub (install `devtools` first, if not already installed):
+Install the package from CRAN:
+
+```r
+# Install from CRAN
+install.packages("vivaglint")
+```
+
+Install the development version from GitHub:
 
 ```r
 # Install from GitHub
+install.packages("devtools")
 devtools::install_github("microsoft/vivaglint")
 ```
 
 ## Core Capabilities
 
 ### 1. **Data Import & Validation**
-- Automatic validation of Glint export structure
+- Automatic validation of Glint export structure (CSV or API)
 - Survey metadata extraction
 
 
@@ -40,6 +48,19 @@ library(vivaglint)
 
 # 1. Load survey data
 survey <- read_glint_survey("survey_export.csv")
+
+# Or pull directly from the Viva Glint API
+glint_setup(
+  tenant_id = "your-tenant-id",
+  client_id = "your-client-id",
+  client_secret = "your-client-secret",
+  experience_name = "your-experience-name"
+)
+survey <- read_glint_survey_api(
+  survey_uuid = "your-survey-uuid",
+  cycle_id = "your-cycle-id",
+  emp_id_col = "EMP ID"
+)
 
 # 2. Get summary statistics (5-point scale)
 summary <- summarize_survey(survey, scale_points = 5)
@@ -84,6 +105,8 @@ demo_results <- analyze_by_attributes(
 | Function | Purpose |
 |----------|---------|
 | `read_glint_survey()` | Import and validate Glint CSV exports |
+| `read_glint_survey_api()` | Export and import survey data via the Glint API |
+| `glint_setup()` | Configure API credentials for `read_glint_survey_api()` |
 | `summarize_survey()` | Calculate comprehensive question metrics |
 | `get_response_dist()` | Get response value distributions |
 | `compare_cycles()` | Compare metrics across survey cycles |
@@ -104,6 +127,7 @@ demo_results <- analyze_by_attributes(
 - stringr (>= 1.4.0)
 - lubridate (>= 1.7.0)
 - purrr (>= 0.3.0)
+- httr (>= 1.4.0)
 
 **Optional:**
 - psych (>= 2.0.0) - for factor analysis
@@ -120,15 +144,14 @@ Access function documentation within R or on MSLearn:
 ```
 
 Additional documentation files:
-- `QUICK_REFERENCE.md` - Quick reference guide with examples
 - `FUNCTION_OUTPUTS.md` - Detailed output structure documentation
-- `PACKAGE_USAGE.md` - Comprehensive usage guide
+- `USER_GUIDE.md` - Comprehensive user guide with examples
 
 
 
 ## Data Privacy & Security
 
-This package processes survey data locally and does not transmit data to any external services, including those of Microsoft. All analysis is performed within your R environment. Ensure compliance with your organization's data handling policies when working with employee survey data.
+By default, this package processes survey data locally and does not transmit data to external services. If you use the API import functions (e.g., `read_glint_survey_api()`), the package connects to Microsoft Graph to export and download survey data. All analysis is still performed locally. Ensure compliance with your organization's data handling policies when working with employee survey data.
 
 ## Code of Conduct
 

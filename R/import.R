@@ -211,6 +211,47 @@ validate_glint_structure <- function(data,
                                      status_col = "Status",
                                      completion_date_col = "Survey Cycle Completion Date",
                                      sent_date_col = "Survey Cycle Sent Date") {
+  question_suffixes <- c("_COMMENT", "_COMMENT_TOPICS", "_SENSITIVE_COMMENT_FLAG")
+  question_suffix_pattern <- "(_COMMENT|_COMMENT_TOPICS|_SENSITIVE_COMMENT_FLAG)$"
+  normalize_name <- function(value) trimws(value, which = "right")
+  resolve_base_col <- function(stem_trim, column_names) {
+    exact_match <- column_names[column_names == stem_trim]
+    if (length(exact_match) > 0) {
+      return(exact_match[1])
+    }
+    normalized_names <- normalize_name(column_names)
+    matches <- column_names[normalized_names == stem_trim]
+    if (length(matches) > 0) {
+      return(matches[1])
+    }
+    ""
+  }
+  find_suffix_cols <- function(stem_trim, column_names) {
+    candidates <- column_names[grepl(question_suffix_pattern, column_names)]
+    if (length(candidates) == 0) {
+      return(character(0))
+    }
+    stems <- normalize_name(vapply(candidates, get_question_stem, character(1)))
+    candidates[stems == stem_trim]
+  }
+  detect_question_columns <- function(column_names) {
+    suffix_cols <- column_names[grepl(question_suffix_pattern, column_names)]
+    if (length(suffix_cols) == 0) {
+      return(character(0))
+    }
+    stems_trim <- unique(normalize_name(vapply(suffix_cols, get_question_stem, character(1))))
+    stems_trim <- stems_trim[nzchar(stems_trim)]
+    base_cols <- vapply(stems_trim, resolve_base_col, character(1), column_names = column_names)
+    base_cols <- base_cols[nzchar(base_cols)]
+    unique(c(base_cols, suffix_cols))
+  }
+  detected_columns <- setdiff(names(data), detect_question_columns(names(data)))
+  detected_columns_output <- if (length(detected_columns) == 0) {
+    "  - (none)"
+  } else {
+    paste0("  - ", detected_columns, collapse = "\n")
+  }
+
   required_name_map <- list(
     "Employee ID" = emp_id_col
   )
@@ -231,7 +272,9 @@ validate_glint_structure <- function(data,
     stop(
       "Column name(s) must be provided for: ",
       paste(missing_required_names, collapse = ", "),
-      ".",
+      ".\n\nColumns detected in the data frame:\n",
+      detected_columns_output,
+      "\n\nPass the correct column name arguments or rename your columns.",
       call. = FALSE
     )
   }
@@ -244,7 +287,7 @@ validate_glint_structure <- function(data,
       "Missing required standard column(s): %s\n\nYour CSV file must contain all of the following required Viva Glint columns:\n%s\n\nColumns detected in the data frame:\n%s\n\nPlease ensure you are using a complete Viva Glint survey export, or pass the correct column name arguments.",
       paste0("'", missing_required_cols, "'", collapse = ", "),
       paste0("  - ", required_cols, collapse = "\n"),
-      paste0("  - ", names(data), collapse = "\n")
+      detected_columns_output
     ))
   }
 
@@ -286,7 +329,7 @@ validate_glint_structure <- function(data,
       }, character(1)),
       "",
       "Columns detected in the data frame:",
-      paste0("  - ", names(data))
+      detected_columns_output
     )
     warning(paste(warning_lines, collapse = "\n"), call. = FALSE)
   }
@@ -301,22 +344,31 @@ validate_glint_structure <- function(data,
     sent_date_col = sent_date_col
   )
   question_cols <- setdiff(names(data), all_standard_cols)
+  suffix_cols <- question_cols[grepl(question_suffix_pattern, question_cols)]
+  question_stems <- unique(normalize_name(vapply(suffix_cols, get_question_stem, character(1))))
+  question_stems <- question_stems[nzchar(question_stems)]
 
-  if (length(question_cols) == 0) {
+  if (length(question_stems) == 0) {
     stop(
       "No question columns found in the data.\n\nA Viva Glint export should contain at least one question with its associated columns:\n  - [Question Text]\n  - [Question Text]_COMMENT\n  - [Question Text]_COMMENT_TOPICS\n  - [Question Text]_SENSITIVE_COMMENT_FLAG\n\nPlease check that you are using a complete survey export file."
     )
   }
 
-  question_stems <- unique(sapply(question_cols, get_question_stem))
-
-  expected_suffixes <- c("", "_COMMENT", "_COMMENT_TOPICS", "_SENSITIVE_COMMENT_FLAG")
+  expected_suffixes <- c("", question_suffixes)
   orphaned_cols <- character(0)
   incomplete_questions <- character(0)
 
   for (stem in question_stems) {
-    expected_cols <- paste0(stem, expected_suffixes)
-    found_cols <- expected_cols %in% names(data)
+    base_col <- resolve_base_col(stem, names(data))
+    expected_cols <- c(
+      if (nzchar(base_col)) base_col else stem,
+      paste0(stem, question_suffixes)
+    )
+    existing_suffix_cols <- find_suffix_cols(stem, names(data))
+    existing_suffix_types <- vapply(question_suffixes, function(suffix) {
+      any(endsWith(existing_suffix_cols, suffix))
+    }, logical(1))
+    found_cols <- c(nzchar(base_col), existing_suffix_types)
 
     # If we have some but not all columns for this question, it's incomplete
     if (any(found_cols) && !all(found_cols)) {
@@ -329,22 +381,10 @@ validate_glint_structure <- function(data,
     }
   }
 
-  # Check for orphaned columns (columns that don't fit the pattern)
-  for (col in question_cols) {
-    stem <- get_question_stem(col)
-    expected_cols <- paste0(stem, expected_suffixes)
-
-    # If this column's stem would create columns that don't all exist, it might be orphaned
-    # But only flag it if it's truly orphaned (not part of a valid set)
-    if (!all(expected_cols %in% names(data))) {
-      # Check if this is actually an orphaned column
-      if (!col %in% paste0(stem, expected_suffixes[1])) {
-        # This is a suffix column without its base
-        if (!paste0(stem, expected_suffixes[1]) %in% names(data)) {
-          orphaned_cols <- c(orphaned_cols, col)
-        }
-      }
-    }
+  if (length(suffix_cols) > 0) {
+    suffix_stems <- normalize_name(vapply(suffix_cols, get_question_stem, character(1)))
+    base_matches <- vapply(suffix_stems, resolve_base_col, character(1), column_names = names(data))
+    orphaned_cols <- unique(suffix_cols[!nzchar(base_matches)])
   }
 
   # Report errors if found
@@ -418,15 +458,48 @@ extract_questions <- function(data, emp_id_col = NULL) {
 
   standard_cols <- standard_cols %||% get_standard_columns(emp_id_col)
   question_cols <- setdiff(names(data), standard_cols)
-  question_stems <- unique(sapply(question_cols, get_question_stem))
+  question_suffixes <- c("_COMMENT", "_COMMENT_TOPICS", "_SENSITIVE_COMMENT_FLAG")
+  question_suffix_pattern <- "(_COMMENT|_COMMENT_TOPICS|_SENSITIVE_COMMENT_FLAG)$"
+  normalize_name <- function(value) trimws(value, which = "right")
+  resolve_base_col <- function(stem_trim, column_names) {
+    exact_match <- column_names[column_names == stem_trim]
+    if (length(exact_match) > 0) {
+      return(exact_match[1])
+    }
+    normalized_names <- normalize_name(column_names)
+    matches <- column_names[normalized_names == stem_trim]
+    if (length(matches) > 0) {
+      return(matches[1])
+    }
+    ""
+  }
+  find_suffix_col <- function(stem_trim, suffix, column_names) {
+    candidates <- column_names[grepl(paste0(suffix, "$"), column_names)]
+    if (length(candidates) == 0) {
+      return(paste0(stem_trim, suffix))
+    }
+    stems <- normalize_name(vapply(candidates, get_question_stem, character(1)))
+    matches <- candidates[stems == stem_trim]
+    if (length(matches) > 0) {
+      return(matches[1])
+    }
+    paste0(stem_trim, suffix)
+  }
+  suffix_cols <- question_cols[grepl(question_suffix_pattern, question_cols)]
+  question_stems <- unique(normalize_name(vapply(suffix_cols, get_question_stem, character(1))))
+  question_stems <- question_stems[nzchar(question_stems)]
 
   questions_df <- purrr::map_dfr(question_stems, function(stem) {
+    response_col <- resolve_base_col(stem, names(data))
+    if (!nzchar(response_col)) {
+      response_col <- stem
+    }
     dplyr::tibble(
       question = stem,
-      response_col = stem,
-      comment_col = paste0(stem, "_COMMENT"),
-      topics_col = paste0(stem, "_COMMENT_TOPICS"),
-      flag_col = paste0(stem, "_SENSITIVE_COMMENT_FLAG")
+      response_col = response_col,
+      comment_col = find_suffix_col(stem, "_COMMENT", names(data)),
+      topics_col = find_suffix_col(stem, "_COMMENT_TOPICS", names(data)),
+      flag_col = find_suffix_col(stem, "_SENSITIVE_COMMENT_FLAG", names(data))
     )
   })
 
