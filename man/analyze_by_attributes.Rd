@@ -71,28 +71,32 @@ or when you want to filter the data before analysis.
 }
 }
 \examples{
-\dontrun{
-survey <- read_glint_survey("survey_export.csv")
+survey_path <- system.file("extdata", "survey_export.csv", package = "vivaglint")
+attr_file <- system.file("extdata", "employee_attributes.csv", package = "vivaglint")
+survey <- read_glint_survey(survey_path, emp_id_col = "EMP ID")
 
 # Option 1: provide attribute_file directly
 results <- analyze_by_attributes(
   survey,
-  attribute_file = "employee_attributes.csv",
+  attribute_file = attr_file,
   scale_points = 5,
   attribute_cols = "Department",
-  emp_id_col = "EMP ID"
+  emp_id_col = "EMP ID",
+  min_group_size = 2
 )
 
 # Option 2: pre-join with join_attributes(), then omit attribute_file
-survey_enriched <- join_attributes(survey, "employee_attributes.csv",
-                                   emp_id_col = "EMP ID")
+survey_enriched <- join_attributes(survey, attr_file, emp_id_col = "EMP ID")
 results <- analyze_by_attributes(survey_enriched, scale_points = 5,
                                  attribute_cols = "Department",
-                                 emp_id_col = "EMP ID")
+                                 emp_id_col = "EMP ID",
+                                 min_group_size = 2)
 
 # With dot plot
-analyze_by_attributes(survey_enriched, scale_points = 5,
-                      attribute_cols = "Department",
-                      emp_id_col = "EMP ID", plot = TRUE)
+if (requireNamespace("ggplot2", quietly = TRUE)) {
+  analyze_by_attributes(survey_enriched, scale_points = 5,
+                        attribute_cols = "Department",
+                        emp_id_col = "EMP ID", plot = TRUE,
+                        min_group_size = 2)
 }
 }

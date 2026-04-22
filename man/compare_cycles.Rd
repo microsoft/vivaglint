@@ -42,19 +42,20 @@ Compares question-level metrics across multiple survey cycles, calculating
 change scores and trends over time.
 }
 \examples{
-\dontrun{
-survey1 <- read_glint_survey("survey_2023_q1.csv")
-survey2 <- read_glint_survey("survey_2023_q2.csv")
-survey3 <- read_glint_survey("survey_2023_q3.csv")
+survey_path <- system.file("extdata", "survey_export.csv", package = "vivaglint")
+survey1 <- read_glint_survey(survey_path, emp_id_col = "EMP ID")
+survey2 <- read_glint_survey(survey_path, emp_id_col = "EMP ID")
+survey3 <- read_glint_survey(survey_path, emp_id_col = "EMP ID")
 
 comparison <- compare_cycles(survey1, survey2, survey3,
                               scale_points = 5,
-                              cycle_names = c("Q1 2023", "Q2 2023", "Q3 2023"))
+                              cycle_names = c("Q1 2024", "Q2 2024", "Q3 2024"))
 print(comparison)
 
 # With trend chart
-compare_cycles(survey1, survey2, survey3, scale_points = 5,
-               cycle_names = c("Q1 2023", "Q2 2023", "Q3 2023"),
-               plot = TRUE)
+if (requireNamespace("ggplot2", quietly = TRUE)) {
+  compare_cycles(survey1, survey2, survey3, scale_points = 5,
+                 cycle_names = c("Q1 2024", "Q2 2024", "Q3 2024"),
+                 plot = TRUE)
 }
 }

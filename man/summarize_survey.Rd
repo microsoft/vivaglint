@@ -50,8 +50,8 @@ analysis in tidy format. This includes mean, standard deviation, Glint Score,
 response counts, skip counts, and favorability percentages.
 }
 \examples{
-\dontrun{
-survey <- read_glint_survey("survey_export.csv")
+survey_path <- system.file("extdata", "survey_export.csv", package = "vivaglint")
+survey <- read_glint_survey(survey_path, emp_id_col = "EMP ID")
 
 # Summarize all questions (5-point scale)
 summary <- summarize_survey(survey, scale_points = 5)
@@ -61,6 +61,7 @@ summary_subset <- summarize_survey(survey, scale_points = 5,
   questions = c("My work is meaningful", "I feel valued"))
 
 # With favorability chart
-summarize_survey(survey, scale_points = 5, plot = TRUE)
+if (requireNamespace("ggplot2", quietly = TRUE)) {
+  summarize_survey(survey, scale_points = 5, plot = TRUE)
 }
 }

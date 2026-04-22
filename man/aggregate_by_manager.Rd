@@ -51,8 +51,8 @@ Rolls up survey responses to the manager level, calculating the same
 metrics as summarize_survey() for each manager's team.
 }
 \examples{
-\dontrun{
-survey <- read_glint_survey("survey_export.csv")
+survey_path <- system.file("extdata", "survey_export.csv", package = "vivaglint")
+survey <- read_glint_survey(survey_path, emp_id_col = "EMP ID")
 
 # Direct reports only
 manager_summary <- aggregate_by_manager(survey, scale_points = 5,
@@ -66,7 +66,8 @@ manager_summary_full <- aggregate_by_manager(survey, scale_points = 5,
                                              full_tree = TRUE)
 
 # With ranked dot plot
-aggregate_by_manager(survey, scale_points = 5, emp_id_col = "EMP ID",
-                     manager_id_col = "Manager ID", plot = TRUE)
+if (requireNamespace("ggplot2", quietly = TRUE)) {
+  aggregate_by_manager(survey, scale_points = 5, emp_id_col = "EMP ID",
+                       manager_id_col = "Manager ID", plot = TRUE)
 }
 }

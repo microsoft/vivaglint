@@ -28,9 +28,8 @@ A tibble with one row per question containing:
 Parses column names to extract unique questions and their associated column names.
 }
 \examples{
-\dontrun{
-survey <- read_glint_survey("survey_export.csv")
+survey_path <- system.file("extdata", "survey_export.csv", package = "vivaglint")
+survey <- read_glint_survey(survey_path, emp_id_col = "EMP ID")
 questions <- extract_questions(survey)
 print(questions)
-}
 }

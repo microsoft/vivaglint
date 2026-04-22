@@ -44,7 +44,25 @@ library(vivaglint)
 Export your survey from Viva Glint as a CSV and load it with `read_glint_survey()`:
 
 ```{r eval=FALSE}
-survey <- read_glint_survey("FY25_Q2_Engagement_Export.csv")
+survey_path <- system.file("extdata", "survey_export.csv", package = "vivaglint")
+survey <- read_glint_survey(survey_path, emp_id_col = "EMP ID")
+```
+
+If you prefer to pull data directly from the Viva Glint API, configure
+credentials once and use `read_glint_survey_api()`:
+
+```{r eval=FALSE}
+glint_setup(
+  tenant_id = "your-tenant-id",
+  client_id = "your-client-id",
+  client_secret = "your-client-secret",
+  experience_name = "your-experience-name"
+)
+survey <- read_glint_survey_api(
+  survey_uuid = "your-survey-uuid",
+  cycle_id = "your-cycle-id",
+  emp_id_col = "EMP ID"
+)
 ```
 
 This returns a `glint_survey` object containing:
@@ -106,9 +124,10 @@ The output adds columns like `count_1`, `count_2`, `pct_1`, `pct_2`, etc. for ea
 One of the most common HR reporting tasks is tracking whether engagement improved since the last survey. `compare_cycles()` takes multiple survey objects and aligns them by question:
 
 ```{r eval=FALSE}
-survey_q1 <- read_glint_survey("FY25_Q1_Export.csv")
-survey_q2 <- read_glint_survey("FY25_Q2_Export.csv")
-survey_q3 <- read_glint_survey("FY25_Q3_Export.csv")
+survey_path <- system.file("extdata", "survey_export.csv", package = "vivaglint")
+survey_q1 <- read_glint_survey(survey_path, emp_id_col = "EMP ID")
+survey_q2 <- read_glint_survey(survey_path, emp_id_col = "EMP ID")
+survey_q3 <- read_glint_survey(survey_path, emp_id_col = "EMP ID")
 
 trends <- compare_cycles(
   survey_q1, survey_q2, survey_q3,
@@ -165,9 +184,10 @@ low_engagement_managers <- manager_summary %>%
 `analyze_by_attributes()` lets you break survey results down by any combination of employee attributes — department, gender, tenure group, location, job level, etc.
 
 ```{r eval=FALSE}
+attr_path <- system.file("extdata", "employee_attributes.csv", package = "vivaglint")
 demo_results <- analyze_by_attributes(
   survey,
-  attribute_file = "employee_attributes.csv",
+  attribute_file = attr_path,
   scale_points = 5,
   attribute_cols = c("Department", "Gender", "Tenure Group"),
   min_group_size = 10  # Suppress groups below this size for privacy
@@ -182,7 +202,8 @@ If you plan to run several analyses against the same attribute file, join it onc
 
 ```{r eval=FALSE}
 # Join once
-survey_enriched <- join_attributes(survey, "employee_attributes.csv")
+attr_path <- system.file("extdata", "employee_attributes.csv", package = "vivaglint")
+survey_enriched <- join_attributes(survey, attr_path)
 
 # Reuse for multiple analyses — no need to re-read the file
 dept_results <- analyze_by_attributes(
@@ -214,9 +235,10 @@ Linking engagement scores to actual turnover is a high-value analysis for HR lea
 
 ```{r eval=FALSE}
 # Basic attrition analysis (90, 180, and 365 days post-survey)
+attrition_path <- system.file("extdata", "attrition.csv", package = "vivaglint")
 attrition <- analyze_attrition(
   survey,
-  attrition_file = "termination_data.csv",
+  attrition_file = attrition_path,
   emp_id_col = "EMP ID",
   term_date_col = "Termination Date",
   scale_points = 5
@@ -230,11 +252,13 @@ The output shows, for each question and time period, the attrition rates for fav
 Combine attrition analysis with employee attributes to answer questions like "Are unfavorable responders in Engineering leaving at higher rates than those in Sales?":
 
 ```{r eval=FALSE}
-survey_enriched <- join_attributes(survey, "employee_attributes.csv")
+attr_path <- system.file("extdata", "employee_attributes.csv", package = "vivaglint")
+attrition_path <- system.file("extdata", "attrition.csv", package = "vivaglint")
+survey_enriched <- join_attributes(survey, attr_path)
 
 attrition_by_dept <- analyze_attrition(
   survey_enriched,
-  attrition_file = "termination_data.csv",
+  attrition_file = attrition_path,
   emp_id_col = "EMP ID",
   term_date_col = "Termination Date",
   scale_points = 5,
@@ -341,7 +365,8 @@ quantitative <- parts$quantitative
 qualitative <- parts$qualitative
 
 # Pass numeric data directly to vivaglint functions
-summary <- summarize_survey(parts$quantitative, scale_points = 5)
+summary <- summarize_survey(parts$quantitative, scale_points = 5,
+                            emp_id_col = "EMP ID")
 
 # Rejoin at any time using EMP ID
 full_data <- dplyr::left_join(parts$quantitative, parts$qualitative, by = "EMP ID")
@@ -357,9 +382,10 @@ Use `min_group_size` wherever it's available to suppress results for groups that
 
 ```{r eval=FALSE}
 # Default is 5; consider 10 or higher for sensitive analyses
+attr_path <- system.file("extdata", "employee_attributes.csv", package = "vivaglint")
 demo_results <- analyze_by_attributes(
   survey,
-  attribute_file = "employee_attributes.csv",
+  attribute_file = attr_path,
   scale_points = 5,
   attribute_cols = c("Department", "Gender"),
   min_group_size = 10

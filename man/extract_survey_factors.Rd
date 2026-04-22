@@ -54,22 +54,20 @@ Performs factor analysis on survey question responses to identify underlying
 latent factors. Supports multiple rotation methods with oblique rotation as default.
 }
 \examples{
-\dontrun{
-survey <- read_glint_survey("survey_export.csv")
+survey_path <- system.file("extdata", "survey_export.csv", package = "vivaglint")
+survey <- read_glint_survey(survey_path, emp_id_col = "EMP ID")
 
-# Extract factors with default settings (oblique rotation)
-factors <- extract_survey_factors(survey)
+if (requireNamespace("psych", quietly = TRUE)) {
+  # Extract factors with fixed count to keep runtime small
+  factors <- extract_survey_factors(survey, n_factors = 1)
+  print(factors$factor_summary)
 
-# Extract 3 factors with varimax rotation
-factors <- extract_survey_factors(survey, n_factors = 3, rotation = "varimax")
+  # Filter to strong loaders only
+  strong <- dplyr::filter(factors$factor_summary, loading_label == "Strong")
 
-# View consolidated factor summary
-print(factors$factor_summary)
-
-# Filter to strong loaders only
-strong <- dplyr::filter(factors$factor_summary, loading_label == "Strong")
-
-# With factor loading heatmap
-extract_survey_factors(survey, plot = TRUE)
+  # With factor loading heatmap
+  if (requireNamespace("ggplot2", quietly = TRUE)) {
+    extract_survey_factors(survey, n_factors = 1, plot = TRUE)
+  }
 }
 }

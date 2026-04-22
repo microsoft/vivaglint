@@ -38,24 +38,11 @@ other package function, eliminating the need to re-read and re-join the
 attribute file on every call.
 }
 \examples{
-\dontrun{
-survey <- read_glint_survey("survey_export.csv")
+survey_path <- system.file("extdata", "survey_export.csv", package = "vivaglint")
+attr_path <- system.file("extdata", "employee_attributes.csv", package = "vivaglint")
+survey <- read_glint_survey(survey_path, emp_id_col = "EMP ID")
 
-# Join from a file path
-survey_enriched <- join_attributes(survey, "employee_attributes.csv")
-
-# Join from a data frame already in memory
-attrs <- readr::read_csv("employee_attributes.csv")
-survey_enriched <- join_attributes(survey, attrs)
-
-# Use the enriched survey directly — no attribute_file needed
+survey_enriched <- join_attributes(survey, attr_path, emp_id_col = "EMP ID")
 results <- analyze_by_attributes(survey_enriched, scale_points = 5,
                                  attribute_cols = "Department")
-
-# Filter before analysis
-na_only <- survey_enriched
-na_only$data <- dplyr::filter(survey_enriched$data, Division == "North America")
-results_na <- analyze_by_attributes(na_only, scale_points = 5,
-                                    attribute_cols = "Department")
-}
 }

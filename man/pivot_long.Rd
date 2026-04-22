@@ -48,8 +48,8 @@ Transforms survey data from wide format (one row per respondent) to long format
 comments, or both depending on the data_type parameter.
 }
 \examples{
-\dontrun{
-survey <- read_glint_survey("survey_export.csv")
+survey_path <- system.file("extdata", "survey_export.csv", package = "vivaglint")
+survey <- read_glint_survey(survey_path, emp_id_col = "EMP ID")
 
 # Get all responses (with and without comments)
 all_data <- pivot_long(survey)
@@ -61,5 +61,4 @@ comments_only <- pivot_long(survey, data_type = "comments")
 both <- pivot_long(survey, data_type = "both")
 all_responses <- both$all
 comments <- both$comments
-}
 }

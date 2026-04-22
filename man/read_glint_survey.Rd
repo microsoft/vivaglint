@@ -4,7 +4,17 @@
 \alias{read_glint_survey}
 \title{Read Viva Glint Survey Data}
 \usage{
-read_glint_survey(file_path, emp_id_col, encoding = "UTF-8")
+read_glint_survey(
+	file_path,
+	emp_id_col = NULL,
+	first_name_col = "First Name",
+	last_name_col = "Last Name",
+	email_col = "Email",
+	status_col = "Status",
+	completion_date_col = "Survey Cycle Completion Date",
+	sent_date_col = "Survey Cycle Sent Date",
+	encoding = "UTF-8"
+)
 }
 \arguments{
 \item{file_path}{Character string specifying the path to the CSV file}
@@ -15,6 +25,20 @@ column in the survey export (e.g., \code{"Employee ID"},
 organization. The value is stored in \code{survey$metadata$emp_id_col}
 and used automatically by downstream functions so you do not need to
 repeat it on every call.}
+
+\item{first_name_col}{Column name for first name (default: "First Name")}
+
+\item{last_name_col}{Column name for last name (default: "Last Name")}
+
+\item{email_col}{Column name for email (default: "Email")}
+
+\item{status_col}{Column name for status (default: "Status")}
+
+\item{completion_date_col}{Column name for survey completion date
+(default: "Survey Cycle Completion Date")}
+
+\item{sent_date_col}{Column name for survey sent date
+(default: "Survey Cycle Sent Date")}
 
 \item{encoding}{Character string specifying file encoding (default: "UTF-8")}
 }
@@ -35,11 +59,12 @@ eight standard Glint column names), \code{questions} (a tibble from
 Reads a Viva Glint survey export CSV file with automatic validation and parsing.
 This function validates the file structure, parses dates, and organizes the data
 into a structured format ready for analysis.
+To import directly from the Viva Glint API, use
+\code{read_glint_survey_api()}.
 }
 \examples{
-\dontrun{
-survey <- read_glint_survey("survey_export.csv")
+survey_path <- system.file("extdata", "survey_export.csv", package = "vivaglint")
+survey <- read_glint_survey(survey_path, emp_id_col = "EMP ID")
 head(survey$data)
 survey$metadata$questions
-}
 }

@@ -48,8 +48,8 @@ Calculates correlations between all question response columns in the survey.
 Supports multiple correlation methods and output formats.
 }
 \examples{
-\dontrun{
-survey <- read_glint_survey("survey_export.csv")
+survey_path <- system.file("extdata", "survey_export.csv", package = "vivaglint")
+survey <- read_glint_survey(survey_path, emp_id_col = "EMP ID")
 
 # Get Pearson correlations in long format (default)
 correlations <- get_correlations(survey)
@@ -61,6 +61,7 @@ correlations_spearman <- get_correlations(survey, method = "spearman")
 cor_matrix <- get_correlations(survey, format = "matrix")
 
 # With correlation heatmap
-get_correlations(survey, plot = TRUE)
+if (requireNamespace("ggplot2", quietly = TRUE)) {
+  get_correlations(survey, plot = TRUE)
 }
 }

@@ -29,14 +29,14 @@ and topic data (for qualitative analysis). Both outputs retain the employee
 ID column so they can be rejoined at any time.
 }
 \examples{
-\dontrun{
-survey <- read_glint_survey("survey_export.csv")
+survey_path <- system.file("extdata", "survey_export.csv", package = "vivaglint")
+survey <- read_glint_survey(survey_path, emp_id_col = "EMP ID")
 parts  <- split_survey_data(survey)
 
 # Analyze numeric responses
-summary <- summarize_survey(parts$quantitative, scale_points = 5)
+summary <- summarize_survey(parts$quantitative, scale_points = 5,
+                            emp_id_col = "EMP ID")
 
 # Work with comments separately
 comments <- parts$qualitative
-}
 }

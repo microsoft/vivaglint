@@ -36,8 +36,8 @@ topics. Supports both exact substring matching and fuzzy (approximate)
 matching that tolerates minor spelling differences.
 }
 \examples{
-\dontrun{
-survey <- read_glint_survey("survey_export.csv")
+survey_path <- system.file("extdata", "survey_export.csv", package = "vivaglint")
+survey <- read_glint_survey(survey_path, emp_id_col = "EMP ID")
 
 # Fuzzy search (default) - finds "manager", "Manager", "managers", etc.
 results <- search_comments(survey, "manager")
@@ -47,5 +47,4 @@ results_exact <- search_comments(survey, "Manager", exact = TRUE)
 
 # Wider fuzzy tolerance to catch more spelling variations
 results_wide <- search_comments(survey, "management", max_distance = 0.3)
-}
 }

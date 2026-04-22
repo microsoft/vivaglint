@@ -4,9 +4,9 @@
 \name{vivaglint-package}
 \alias{vivaglint}
 \alias{vivaglint-package}
-\title{vivaglint: Analysis Tools for Viva Glint Survey Data}
+\title{vivaglint: Analysis Tools for 'Viva Glint' Survey Data}
 \description{
-Provides functions for importing, validating, and analyzing Viva Glint survey data exports. Includes tools for data reshaping, question-level analysis, multi-cycle comparisons, and organizational hierarchy analysis.
+Provides functions for importing, validating, and analyzing 'Viva Glint' survey data exports, with optional API-based import via the 'Microsoft Graph' API. Includes tools for data reshaping, question-level analysis, multi-cycle comparisons, organizational hierarchy analysis, factor analysis, and correlation analysis. Harman (1960, ISBN: 0226316513); Husser (2017) \doi{10.1002/9781118901731.iecrm0048}.
 }
 \seealso{
 Useful links:
@@ -18,6 +18,11 @@ Useful links:
 }
 \author{
 \strong{Maintainer}: Eric Knudsen \email{ericknudsen@microsoft.com}
+
+Other contributors:
+\itemize{
+  \item Microsoft Corporation [copyright holder]
+}
 
 }
 \keyword{internal}

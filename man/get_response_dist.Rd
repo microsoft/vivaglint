@@ -31,8 +31,8 @@ Calculates the distribution of response values for survey questions, returning
 counts and percentages for each response value in tidy format.
 }
 \examples{
-\dontrun{
-survey <- read_glint_survey("survey_export.csv")
+survey_path <- system.file("extdata", "survey_export.csv", package = "vivaglint")
+survey <- read_glint_survey(survey_path, emp_id_col = "EMP ID")
 
 # Get response distribution for all questions
 dist <- get_response_dist(survey)
@@ -42,6 +42,7 @@ dist_subset <- get_response_dist(survey,
   questions = c("My work is meaningful", "I feel valued"))
 
 # With distribution chart
-get_response_dist(survey, plot = TRUE)
+if (requireNamespace("ggplot2", quietly = TRUE)) {
+  get_response_dist(survey, plot = TRUE)
 }
 }

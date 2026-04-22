@@ -70,33 +70,36 @@ calculating how much more (or less) likely employees are to leave within
 specified time periods if they respond unfavorably vs favorably to survey questions.
 }
 \examples{
-\dontrun{
-survey <- read_glint_survey("survey_export.csv")
+survey_path <- system.file("extdata", "survey_export.csv", package = "vivaglint")
+attrition_file <- system.file("extdata", "attrition.csv", package = "vivaglint")
+attr_path <- system.file("extdata", "employee_attributes.csv", package = "vivaglint")
+survey <- read_glint_survey(survey_path, emp_id_col = "EMP ID")
 
 # Overall attrition analysis
 attrition <- analyze_attrition(
   survey,
-  attrition_file = "attrition.csv",
+  attrition_file = attrition_file,
   emp_id_col = "EMP ID",
   term_date_col = "Termination Date",
   scale_points = 5
 )
 
 # Attrition segmented by Department and Gender
-survey_enriched <- join_attributes(survey, "employee_attributes.csv")
+survey_enriched <- join_attributes(survey, attr_path, emp_id_col = "EMP ID")
 attrition_by_dept <- analyze_attrition(
   survey_enriched,
-  attrition_file = "attrition.csv",
+  attrition_file = attrition_file,
   emp_id_col = "EMP ID",
   term_date_col = "Termination Date",
   scale_points = 5,
   attribute_cols = c("Department", "Gender"),
-  min_group_size = 10
+  min_group_size = 2
 )
 
 # With attrition chart
-analyze_attrition(survey, attrition_file = "attrition.csv",
-                  emp_id_col = "EMP ID", term_date_col = "Termination Date",
-                  scale_points = 5, plot = TRUE)
+if (requireNamespace("ggplot2", quietly = TRUE)) {
+  analyze_attrition(survey, attrition_file = attrition_file,
+                    emp_id_col = "EMP ID", term_date_col = "Termination Date",
+                    scale_points = 5, plot = TRUE)
 }
 }
