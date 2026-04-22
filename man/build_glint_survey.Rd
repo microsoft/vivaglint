@@ -4,12 +4,34 @@
 \alias{build_glint_survey}
 \title{Build a glint_survey Object}
 \usage{
-build_glint_survey(data, emp_id_col, file_path = NA_character_)
+build_glint_survey(
+  data,
+  emp_id_col,
+  first_name_col = "First Name",
+  last_name_col = "Last Name",
+  email_col = "Email",
+  status_col = "Status",
+  completion_date_col = "Survey Cycle Completion Date",
+  sent_date_col = "Survey Cycle Sent Date",
+  file_path = NA_character_
+)
 }
 \arguments{
 \item{data}{A data frame containing Viva Glint survey data}
 
 \item{emp_id_col}{Character string specifying the employee ID column name}
+
+\item{first_name_col}{Column name for first name}
+
+\item{last_name_col}{Column name for last name}
+
+\item{email_col}{Column name for email}
+
+\item{status_col}{Column name for status}
+
+\item{completion_date_col}{Column name for survey completion date}
+
+\item{sent_date_col}{Column name for survey sent date}
 
 \item{file_path}{Character string for the source file path (or NA when not
 loaded from disk)}

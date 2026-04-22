@@ -4,10 +4,32 @@
 \alias{get_standard_columns}
 \title{Get Standard Column Names}
 \usage{
-get_standard_columns(emp_id_col)
+get_standard_columns(
+  emp_id_col,
+  first_name_col = "First Name",
+  last_name_col = "Last Name",
+  email_col = "Email",
+  status_col = "Status",
+  completion_date_col = "Survey Cycle Completion Date",
+  sent_date_col = "Survey Cycle Sent Date"
+)
 }
 \arguments{
 \item{emp_id_col}{Character string specifying the employee ID column name}
+
+\item{first_name_col}{Column name for first name (default: "First Name")}
+
+\item{last_name_col}{Column name for last name (default: "Last Name")}
+
+\item{email_col}{Column name for email (default: "Email")}
+
+\item{status_col}{Column name for status (default: "Status")}
+
+\item{completion_date_col}{Column name for survey completion date
+(default: "Survey Cycle Completion Date")}
+
+\item{sent_date_col}{Column name for survey sent date
+(default: "Survey Cycle Sent Date")}
 }
 \value{
 Character vector of standard column names

@@ -5,15 +5,15 @@
 \title{Read Viva Glint Survey Data}
 \usage{
 read_glint_survey(
-	file_path,
-	emp_id_col = NULL,
-	first_name_col = "First Name",
-	last_name_col = "Last Name",
-	email_col = "Email",
-	status_col = "Status",
-	completion_date_col = "Survey Cycle Completion Date",
-	sent_date_col = "Survey Cycle Sent Date",
-	encoding = "UTF-8"
+  file_path,
+  emp_id_col = NULL,
+  first_name_col = "First Name",
+  last_name_col = "Last Name",
+  email_col = "Email",
+  status_col = "Status",
+  completion_date_col = "Survey Cycle Completion Date",
+  sent_date_col = "Survey Cycle Sent Date",
+  encoding = "UTF-8"
 )
 }
 \arguments{
