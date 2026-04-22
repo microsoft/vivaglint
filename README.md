@@ -8,7 +8,7 @@ R package for analyzing Viva Glint survey data with comprehensive statistical to
 
 ## Installation
 
-Install the package from CRAN:
+Install the package from CRAN (pending package approval; if package install does not succeed via CRAN, you can install via GitHub below):
 
 ```r
 # Install from CRAN
