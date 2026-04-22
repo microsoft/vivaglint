@@ -42,6 +42,24 @@ List of 2
 
 ---
 
+## 1b. read_glint_survey_api()
+
+**Returns:** Same structure as `read_glint_survey()`
+
+```r
+survey <- read_glint_survey_api(
+  survey_uuid = "your-survey-uuid",
+  cycle_id = "your-cycle-id",
+  emp_id_col = "EMP ID"
+)
+str(survey)
+```
+
+**Notes:**
+- `metadata$file_path` is set to `NA` because the data is pulled from the API.
+
+---
+
 ## 2. extract_questions()
 
 **Returns:** A tibble with one row per question

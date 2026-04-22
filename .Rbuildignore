@@ -4,12 +4,13 @@
 ^\.git$
 ^\.gitignore$
 ^\.claude$
-^QUICK_REFERENCE\.md$
 ^FUNCTION_OUTPUTS\.md$
-^PACKAGE_USAGE\.md$
+^USER_GUIDE\.md$
 ^demo\.R$
 ^cran-comments\.md$
 ^CRAN-SUBMISSION$
 ^CONTRIBUTING\.md$
 ^SECURITY\.md$
 ^LICENSE\.md$
+^doc$
+^Meta$

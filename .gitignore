@@ -60,3 +60,5 @@ CRAN-SUBMISSION
 
 # Test files
 tests/
+/doc/
+/Meta/
