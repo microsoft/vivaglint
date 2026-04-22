@@ -33,8 +33,8 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
-#' survey <- read_glint_survey("survey_export.csv")
+#' survey_path <- system.file("extdata", "survey_export.csv", package = "vivaglint")
+#' survey <- read_glint_survey(survey_path, emp_id_col = "EMP ID")
 #'
 #' # Get all responses (with and without comments)
 #' all_data <- pivot_long(survey)
@@ -46,7 +46,6 @@
 #' both <- pivot_long(survey, data_type = "both")
 #' all_responses <- both$all
 #' comments <- both$comments
-#' }
 pivot_long <- function(survey, data_type = "all", include_empty = FALSE, include_standard_cols = TRUE) {
   if (!data_type %in% c("all", "comments", "both")) {
     stop("data_type must be one of: 'all', 'comments', or 'both'")
@@ -65,7 +64,11 @@ pivot_long <- function(survey, data_type = "all", include_empty = FALSE, include
     stop("emp_id_col could not be determined. Load your survey with read_glint_survey() and specify emp_id_col.")
   }
 
-  standard_cols <- get_standard_columns(emp_id_col)
+  standard_cols <- if (inherits(survey, "glint_survey")) {
+    survey$metadata$standard_columns %||% get_standard_columns(emp_id_col)
+  } else {
+    get_standard_columns(emp_id_col)
+  }
   present_standard_cols <- intersect(standard_cols, names(data))
   standard_data <- data[, present_standard_cols, drop = FALSE]
 

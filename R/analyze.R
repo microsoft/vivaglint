@@ -33,8 +33,8 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
-#' survey <- read_glint_survey("survey_export.csv")
+#' survey_path <- system.file("extdata", "survey_export.csv", package = "vivaglint")
+#' survey <- read_glint_survey(survey_path, emp_id_col = "EMP ID")
 #'
 #' # Summarize all questions (5-point scale)
 #' summary <- summarize_survey(survey, scale_points = 5)
@@ -44,7 +44,8 @@
 #'   questions = c("My work is meaningful", "I feel valued"))
 #'
 #' # With favorability chart
-#' summarize_survey(survey, scale_points = 5, plot = TRUE)
+#' if (requireNamespace("ggplot2", quietly = TRUE)) {
+#'   summarize_survey(survey, scale_points = 5, plot = TRUE)
 #' }
 summarize_survey <- function(survey, scale_points, questions = "all",
                              emp_id_col = NULL, plot = FALSE) {
@@ -152,8 +153,8 @@ summarize_survey <- function(survey, scale_points, questions = "all",
 #' @export
 #'
 #' @examples
-#' \dontrun{
-#' survey <- read_glint_survey("survey_export.csv")
+#' survey_path <- system.file("extdata", "survey_export.csv", package = "vivaglint")
+#' survey <- read_glint_survey(survey_path, emp_id_col = "EMP ID")
 #'
 #' # Get response distribution for all questions
 #' dist <- get_response_dist(survey)
@@ -163,7 +164,8 @@ summarize_survey <- function(survey, scale_points, questions = "all",
 #'   questions = c("My work is meaningful", "I feel valued"))
 #'
 #' # With distribution chart
-#' get_response_dist(survey, plot = TRUE)
+#' if (requireNamespace("ggplot2", quietly = TRUE)) {
+#'   get_response_dist(survey, plot = TRUE)
 #' }
 get_response_dist <- function(survey, questions = "all", plot = FALSE) {
   if (plot) .check_ggplot2()
@@ -293,20 +295,21 @@ expand_value_distributions <- function(analysis_df) {
 #' @export
 #'
 #' @examples
-#' \dontrun{
-#' survey1 <- read_glint_survey("survey_2023_q1.csv")
-#' survey2 <- read_glint_survey("survey_2023_q2.csv")
-#' survey3 <- read_glint_survey("survey_2023_q3.csv")
+#' survey_path <- system.file("extdata", "survey_export.csv", package = "vivaglint")
+#' survey1 <- read_glint_survey(survey_path, emp_id_col = "EMP ID")
+#' survey2 <- read_glint_survey(survey_path, emp_id_col = "EMP ID")
+#' survey3 <- read_glint_survey(survey_path, emp_id_col = "EMP ID")
 #'
 #' comparison <- compare_cycles(survey1, survey2, survey3,
 #'                               scale_points = 5,
-#'                               cycle_names = c("Q1 2023", "Q2 2023", "Q3 2023"))
+#'                               cycle_names = c("Q1 2024", "Q2 2024", "Q3 2024"))
 #' print(comparison)
 #'
 #' # With trend chart
-#' compare_cycles(survey1, survey2, survey3, scale_points = 5,
-#'                cycle_names = c("Q1 2023", "Q2 2023", "Q3 2023"),
-#'                plot = TRUE)
+#' if (requireNamespace("ggplot2", quietly = TRUE)) {
+#'   compare_cycles(survey1, survey2, survey3, scale_points = 5,
+#'                  cycle_names = c("Q1 2024", "Q2 2024", "Q3 2024"),
+#'                  plot = TRUE)
 #' }
 compare_cycles <- function(..., scale_points, cycle_names = NULL,
                            plot = FALSE) {
@@ -385,8 +388,8 @@ compare_cycles <- function(..., scale_points, cycle_names = NULL,
 #' @export
 #'
 #' @examples
-#' \dontrun{
-#' survey <- read_glint_survey("survey_export.csv")
+#' survey_path <- system.file("extdata", "survey_export.csv", package = "vivaglint")
+#' survey <- read_glint_survey(survey_path, emp_id_col = "EMP ID")
 #'
 #' # Get Pearson correlations in long format (default)
 #' correlations <- get_correlations(survey)
@@ -398,7 +401,8 @@ compare_cycles <- function(..., scale_points, cycle_names = NULL,
 #' cor_matrix <- get_correlations(survey, format = "matrix")
 #'
 #' # With correlation heatmap
-#' get_correlations(survey, plot = TRUE)
+#' if (requireNamespace("ggplot2", quietly = TRUE)) {
+#'   get_correlations(survey, plot = TRUE)
 #' }
 get_correlations <- function(survey, method = "pearson", format = "long",
                              use = "pairwise.complete.obs", plot = FALSE) {
@@ -513,23 +517,21 @@ get_correlations <- function(survey, method = "pearson", format = "long",
 #' @export
 #'
 #' @examples
-#' \dontrun{
-#' survey <- read_glint_survey("survey_export.csv")
+#' survey_path <- system.file("extdata", "survey_export.csv", package = "vivaglint")
+#' survey <- read_glint_survey(survey_path, emp_id_col = "EMP ID")
 #'
-#' # Extract factors with default settings (oblique rotation)
-#' factors <- extract_survey_factors(survey)
+#' if (requireNamespace("psych", quietly = TRUE)) {
+#'   # Extract factors with fixed count to keep runtime small
+#'   factors <- extract_survey_factors(survey, n_factors = 1)
+#'   print(factors$factor_summary)
 #'
-#' # Extract 3 factors with varimax rotation
-#' factors <- extract_survey_factors(survey, n_factors = 3, rotation = "varimax")
+#'   # Filter to strong loaders only
+#'   strong <- dplyr::filter(factors$factor_summary, loading_label == "Strong")
 #'
-#' # View consolidated factor summary
-#' print(factors$factor_summary)
-#'
-#' # Filter to strong loaders only
-#' strong <- dplyr::filter(factors$factor_summary, loading_label == "Strong")
-#'
-#' # With factor loading heatmap
-#' extract_survey_factors(survey, plot = TRUE)
+#'   # With factor loading heatmap
+#'   if (requireNamespace("ggplot2", quietly = TRUE)) {
+#'     extract_survey_factors(survey, n_factors = 1, plot = TRUE)
+#'   }
 #' }
 extract_survey_factors <- function(survey, n_factors = NULL, rotation = "oblimin",
                                    min_loading = 0.3, fm = "minres",
@@ -702,34 +704,37 @@ extract_survey_factors <- function(survey, n_factors = NULL, rotation = "oblimin
 #' @export
 #'
 #' @examples
-#' \dontrun{
-#' survey <- read_glint_survey("survey_export.csv")
+#' survey_path <- system.file("extdata", "survey_export.csv", package = "vivaglint")
+#' attrition_file <- system.file("extdata", "attrition.csv", package = "vivaglint")
+#' attr_path <- system.file("extdata", "employee_attributes.csv", package = "vivaglint")
+#' survey <- read_glint_survey(survey_path, emp_id_col = "EMP ID")
 #'
 #' # Overall attrition analysis
 #' attrition <- analyze_attrition(
 #'   survey,
-#'   attrition_file = "attrition.csv",
+#'   attrition_file = attrition_file,
 #'   emp_id_col = "EMP ID",
 #'   term_date_col = "Termination Date",
 #'   scale_points = 5
 #' )
 #'
 #' # Attrition segmented by Department and Gender
-#' survey_enriched <- join_attributes(survey, "employee_attributes.csv")
+#' survey_enriched <- join_attributes(survey, attr_path, emp_id_col = "EMP ID")
 #' attrition_by_dept <- analyze_attrition(
 #'   survey_enriched,
-#'   attrition_file = "attrition.csv",
+#'   attrition_file = attrition_file,
 #'   emp_id_col = "EMP ID",
 #'   term_date_col = "Termination Date",
 #'   scale_points = 5,
 #'   attribute_cols = c("Department", "Gender"),
-#'   min_group_size = 10
+#'   min_group_size = 2
 #' )
 #'
 #' # With attrition chart
-#' analyze_attrition(survey, attrition_file = "attrition.csv",
-#'                   emp_id_col = "EMP ID", term_date_col = "Termination Date",
-#'                   scale_points = 5, plot = TRUE)
+#' if (requireNamespace("ggplot2", quietly = TRUE)) {
+#'   analyze_attrition(survey, attrition_file = attrition_file,
+#'                     emp_id_col = "EMP ID", term_date_col = "Termination Date",
+#'                     scale_points = 5, plot = TRUE)
 #' }
 analyze_attrition <- function(survey, attrition_file, emp_id_col = NULL, term_date_col,
                               scale_points, time_periods = c(90, 180, 365),
@@ -746,13 +751,23 @@ analyze_attrition <- function(survey, attrition_file, emp_id_col = NULL, term_da
     emp_id_col <- emp_id_col %||% survey$metadata$emp_id_col
     survey_data <- survey$data
     questions <- survey$metadata$questions$question
+    col_map <- survey$metadata$standard_column_map %||% list()
+    completion_date_col <- col_map$completion_date %||% "Survey Cycle Completion Date"
   } else {
     survey_data <- survey
     questions <- extract_questions(survey)$question
+    completion_date_col <- "Survey Cycle Completion Date"
   }
 
   if (is.null(emp_id_col)) {
     stop("emp_id_col must be specified when survey is a plain data frame")
+  }
+  if (is.null(completion_date_col) || !nzchar(completion_date_col)) {
+    stop(
+      "analyze_attrition() requires a survey completion date column. ",
+      "Provide completion_date_col when reading the survey.",
+      call. = FALSE
+    )
   }
 
   if (!file.exists(attrition_file)) {
@@ -789,8 +804,15 @@ analyze_attrition <- function(survey, attrition_file, emp_id_col = NULL, term_da
     }
   )
 
-  if (!"Survey Cycle Completion Date" %in% names(survey_data)) {
-    stop("Survey data must contain 'Survey Cycle Completion Date' column")
+  if (!completion_date_col %in% names(survey_data)) {
+    stop(
+      "Survey data must contain the completion date column: '",
+      completion_date_col,
+      "'.\n\nColumns detected in the data frame:\n",
+      paste0("  - ", names(survey_data), collapse = "\n"),
+      "\n\nTo resolve, pass completion_date_col when reading with read_glint_survey() or read_glint_survey_api(), or rename your columns.",
+      call. = FALSE
+    )
   }
 
   combined_data <- survey_data %>%
@@ -799,7 +821,7 @@ analyze_attrition <- function(survey, attrition_file, emp_id_col = NULL, term_da
       by = emp_id_col
     )
 
-  combined_data$survey_date <- as.Date(combined_data$`Survey Cycle Completion Date`)
+  combined_data$survey_date <- as.Date(combined_data[[completion_date_col]])
   combined_data$days_to_term <- as.numeric(
     combined_data[[term_date_col]] - combined_data$survey_date
   )
@@ -972,29 +994,33 @@ analyze_attrition <- function(survey, attrition_file, emp_id_col = NULL, term_da
 #' @export
 #'
 #' @examples
-#' \dontrun{
-#' survey <- read_glint_survey("survey_export.csv")
+#' survey_path <- system.file("extdata", "survey_export.csv", package = "vivaglint")
+#' attr_file <- system.file("extdata", "employee_attributes.csv", package = "vivaglint")
+#' survey <- read_glint_survey(survey_path, emp_id_col = "EMP ID")
 #'
 #' # Option 1: provide attribute_file directly
 #' results <- analyze_by_attributes(
 #'   survey,
-#'   attribute_file = "employee_attributes.csv",
+#'   attribute_file = attr_file,
 #'   scale_points = 5,
 #'   attribute_cols = "Department",
-#'   emp_id_col = "EMP ID"
+#'   emp_id_col = "EMP ID",
+#'   min_group_size = 2
 #' )
 #'
 #' # Option 2: pre-join with join_attributes(), then omit attribute_file
-#' survey_enriched <- join_attributes(survey, "employee_attributes.csv",
-#'                                    emp_id_col = "EMP ID")
+#' survey_enriched <- join_attributes(survey, attr_file, emp_id_col = "EMP ID")
 #' results <- analyze_by_attributes(survey_enriched, scale_points = 5,
 #'                                  attribute_cols = "Department",
-#'                                  emp_id_col = "EMP ID")
+#'                                  emp_id_col = "EMP ID",
+#'                                  min_group_size = 2)
 #'
 #' # With dot plot
-#' analyze_by_attributes(survey_enriched, scale_points = 5,
-#'                       attribute_cols = "Department",
-#'                       emp_id_col = "EMP ID", plot = TRUE)
+#' if (requireNamespace("ggplot2", quietly = TRUE)) {
+#'   analyze_by_attributes(survey_enriched, scale_points = 5,
+#'                         attribute_cols = "Department",
+#'                         emp_id_col = "EMP ID", plot = TRUE,
+#'                         min_group_size = 2)
 #' }
 analyze_by_attributes <- function(survey, attribute_file = NULL, scale_points,
                                  attribute_cols, emp_id_col = NULL,
@@ -1051,7 +1077,11 @@ analyze_by_attributes <- function(survey, attribute_file = NULL, scale_points,
 
   # Get question columns (excluding standard columns AND ALL joined attribute columns,
   # not just the ones used for grouping in this call)
-  standard_cols <- get_standard_columns(emp_id_col)
+  standard_cols <- if (inherits(survey, "glint_survey")) {
+    survey$metadata$standard_columns %||% get_standard_columns(emp_id_col)
+  } else {
+    get_standard_columns(emp_id_col)
+  }
   all_cols <- names(survey_data)
   all_attr_cols <- if (inherits(survey, "glint_survey")) {
     survey$metadata$attribute_cols %||% attribute_cols
@@ -1121,8 +1151,8 @@ analyze_by_attributes <- function(survey, attribute_file = NULL, scale_points,
 #' @export
 #'
 #' @examples
-#' \dontrun{
-#' survey <- read_glint_survey("survey_export.csv")
+#' survey_path <- system.file("extdata", "survey_export.csv", package = "vivaglint")
+#' survey <- read_glint_survey(survey_path, emp_id_col = "EMP ID")
 #'
 #' # Fuzzy search (default) - finds "manager", "Manager", "managers", etc.
 #' results <- search_comments(survey, "manager")
@@ -1132,7 +1162,6 @@ analyze_by_attributes <- function(survey, attribute_file = NULL, scale_points,
 #'
 #' # Wider fuzzy tolerance to catch more spelling variations
 #' results_wide <- search_comments(survey, "management", max_distance = 0.3)
-#' }
 search_comments <- function(survey, query, exact = FALSE, max_distance = 0.2) {
   if (!is.character(query) || length(query) != 1 || nchar(trimws(query)) == 0) {
     stop("query must be a non-empty character string")
@@ -1238,16 +1267,16 @@ search_comments <- function(survey, query, exact = FALSE, max_distance = 0.2) {
 #' @export
 #'
 #' @examples
-#' \dontrun{
-#' survey <- read_glint_survey("survey_export.csv")
+#' survey_path <- system.file("extdata", "survey_export.csv", package = "vivaglint")
+#' survey <- read_glint_survey(survey_path, emp_id_col = "EMP ID")
 #' parts  <- split_survey_data(survey)
 #'
 #' # Analyze numeric responses
-#' summary <- summarize_survey(parts$quantitative, scale_points = 5)
+#' summary <- summarize_survey(parts$quantitative, scale_points = 5,
+#'                             emp_id_col = "EMP ID")
 #'
 #' # Work with comments separately
 #' comments <- parts$qualitative
-#' }
 split_survey_data <- function(survey, emp_id_col = NULL) {
   if (inherits(survey, "glint_survey")) {
     emp_id_col <- emp_id_col %||% survey$metadata$emp_id_col
@@ -1260,7 +1289,11 @@ split_survey_data <- function(survey, emp_id_col = NULL) {
     stop("emp_id_col could not be determined. Load your survey with read_glint_survey() and specify emp_id_col.")
   }
 
-  standard_cols <- get_standard_columns(emp_id_col)
+  standard_cols <- if (inherits(survey, "glint_survey")) {
+    survey$metadata$standard_columns %||% get_standard_columns(emp_id_col)
+  } else {
+    get_standard_columns(emp_id_col)
+  }
   questions     <- extract_questions(data, emp_id_col)
 
   response_cols <- questions$response_col

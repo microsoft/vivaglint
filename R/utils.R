@@ -91,13 +91,29 @@ mean_to_glint_score <- function(mean_val, scale_points) {
 #' required to be present.
 #'
 #' @param emp_id_col Character string specifying the employee ID column name
+#' @param first_name_col Column name for first name (default: "First Name")
+#' @param last_name_col Column name for last name (default: "Last Name")
+#' @param email_col Column name for email (default: "Email")
+#' @param status_col Column name for status (default: "Status")
+#' @param completion_date_col Column name for survey completion date
+#'   (default: "Survey Cycle Completion Date")
+#' @param sent_date_col Column name for survey sent date
+#'   (default: "Survey Cycle Sent Date")
 #'
 #' @return Character vector of standard column names
 #'
 #' @keywords internal
-get_standard_columns <- function(emp_id_col) {
-  c("First Name", "Last Name", "Email", "Status", emp_id_col, "Manager ID",
-    "Survey Cycle Completion Date", "Survey Cycle Sent Date")
+get_standard_columns <- function(emp_id_col,
+                                 first_name_col = "First Name",
+                                 last_name_col = "Last Name",
+                                 email_col = "Email",
+                                 status_col = "Status",
+                                 completion_date_col = "Survey Cycle Completion Date",
+                                 sent_date_col = "Survey Cycle Sent Date") {
+  cols <- c(first_name_col, last_name_col, email_col, status_col, emp_id_col, "Manager ID",
+            completion_date_col, sent_date_col)
+  cols <- cols[!is.na(cols)]
+  cols[nzchar(cols)]
 }
 
 

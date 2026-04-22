@@ -3,6 +3,8 @@
 #' Reads a Viva Glint survey export CSV file with automatic validation and parsing.
 #' This function validates the file structure, parses dates, and organizes the data
 #' into a structured format ready for analysis.
+#' To import directly from the Viva Glint API, use
+#' \code{read_glint_survey_api()}.
 #'
 #' @param file_path Character string specifying the path to the CSV file
 #' @param emp_id_col Character string specifying the name of the employee ID
@@ -11,6 +13,14 @@
 #'   organization. The value is stored in \code{survey$metadata$emp_id_col}
 #'   and used automatically by downstream functions so you do not need to
 #'   repeat it on every call.
+#' @param first_name_col Column name for first name (default: "First Name")
+#' @param last_name_col Column name for last name (default: "Last Name")
+#' @param email_col Column name for email (default: "Email")
+#' @param status_col Column name for status (default: "Status")
+#' @param completion_date_col Column name for survey completion date
+#'   (default: "Survey Cycle Completion Date")
+#' @param sent_date_col Column name for survey sent date
+#'   (default: "Survey Cycle Sent Date")
 #' @param encoding Character string specifying file encoding (default: "UTF-8")
 #'
 #' @return A \code{glint_survey} object (an S3 class extending \code{list}) with
@@ -28,12 +38,19 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
-#' survey <- read_glint_survey("survey_export.csv")
+#' survey_path <- system.file("extdata", "survey_export.csv", package = "vivaglint")
+#' survey <- read_glint_survey(survey_path, emp_id_col = "EMP ID")
 #' head(survey$data)
 #' survey$metadata$questions
-#' }
-read_glint_survey <- function(file_path, emp_id_col, encoding = "UTF-8") {
+read_glint_survey <- function(file_path,
+                              emp_id_col = NULL,
+                              first_name_col = "First Name",
+                              last_name_col = "Last Name",
+                              email_col = "Email",
+                              status_col = "Status",
+                              completion_date_col = "Survey Cycle Completion Date",
+                              sent_date_col = "Survey Cycle Sent Date",
+                              encoding = "UTF-8") {
   if (!file.exists(file_path)) {
     stop(sprintf(
       "File not found: '%s'\nPlease check that the file path is correct.",
@@ -57,11 +74,69 @@ read_glint_survey <- function(file_path, emp_id_col, encoding = "UTF-8") {
     }
   )
 
-  validate_glint_structure(data, emp_id_col)
+  build_glint_survey(
+    data,
+    emp_id_col,
+    first_name_col = first_name_col,
+    last_name_col = last_name_col,
+    email_col = email_col,
+    status_col = status_col,
+    completion_date_col = completion_date_col,
+    sent_date_col = sent_date_col,
+    file_path = file_path
+  )
+}
 
-  standard_cols <- get_standard_columns(emp_id_col)
 
-  date_cols <- c("Survey Cycle Completion Date", "Survey Cycle Sent Date")
+#' Build a glint_survey Object
+#'
+#' Internal helper to validate, parse, and attach metadata.
+#'
+#' @param data A data frame containing Viva Glint survey data
+#' @param emp_id_col Character string specifying the employee ID column name
+#' @param first_name_col Column name for first name
+#' @param last_name_col Column name for last name
+#' @param email_col Column name for email
+#' @param status_col Column name for status
+#' @param completion_date_col Column name for survey completion date
+#' @param sent_date_col Column name for survey sent date
+#' @param file_path Character string for the source file path (or NA when not
+#'   loaded from disk)
+#'
+#' @return A \code{glint_survey} object
+#'
+#' @keywords internal
+build_glint_survey <- function(data,
+                               emp_id_col,
+                               first_name_col = "First Name",
+                               last_name_col = "Last Name",
+                               email_col = "Email",
+                               status_col = "Status",
+                               completion_date_col = "Survey Cycle Completion Date",
+                               sent_date_col = "Survey Cycle Sent Date",
+                               file_path = NA_character_) {
+  validate_glint_structure(
+    data,
+    emp_id_col,
+    first_name_col = first_name_col,
+    last_name_col = last_name_col,
+    email_col = email_col,
+    status_col = status_col,
+    completion_date_col = completion_date_col,
+    sent_date_col = sent_date_col
+  )
+
+  standard_cols <- get_standard_columns(
+    emp_id_col,
+    first_name_col = first_name_col,
+    last_name_col = last_name_col,
+    email_col = email_col,
+    status_col = status_col,
+    completion_date_col = completion_date_col,
+    sent_date_col = sent_date_col
+  )
+
+  date_cols <- c(completion_date_col, sent_date_col)
   for (col in date_cols) {
     if (col %in% names(data)) {
       data[[col]] <- tryCatch(
@@ -80,8 +155,20 @@ read_glint_survey <- function(file_path, emp_id_col, encoding = "UTF-8") {
 
   questions_df <- extract_questions(data, emp_id_col)
 
+  standard_column_map <- list(
+    first_name = first_name_col,
+    last_name = last_name_col,
+    email = email_col,
+    status = status_col,
+    emp_id = emp_id_col,
+    manager_id = "Manager ID",
+    completion_date = completion_date_col,
+    sent_date = sent_date_col
+  )
+
   metadata <- list(
     standard_columns = standard_cols,
+    standard_column_map = standard_column_map,
     emp_id_col = emp_id_col,
     questions = questions_df,
     n_respondents = nrow(data),
@@ -106,24 +193,113 @@ read_glint_survey <- function(file_path, emp_id_col, encoding = "UTF-8") {
 #'
 #' @param data A data frame to validate
 #' @param emp_id_col Character string specifying the employee ID column name
+#' @param first_name_col Column name for first name
+#' @param last_name_col Column name for last name
+#' @param email_col Column name for email
+#' @param status_col Column name for status
+#' @param completion_date_col Column name for survey completion date
+#' @param sent_date_col Column name for survey sent date
 #'
 #' @return NULL (invisibly) if validation passes, otherwise throws an error
 #'
 #' @keywords internal
-validate_glint_structure <- function(data, emp_id_col) {
-  required_cols <- c("First Name", "Last Name", "Email", "Status", emp_id_col,
-                     "Survey Cycle Completion Date", "Survey Cycle Sent Date")
-  missing_cols <- setdiff(required_cols, names(data))
+validate_glint_structure <- function(data,
+                                     emp_id_col,
+                                     first_name_col = "First Name",
+                                     last_name_col = "Last Name",
+                                     email_col = "Email",
+                                     status_col = "Status",
+                                     completion_date_col = "Survey Cycle Completion Date",
+                                     sent_date_col = "Survey Cycle Sent Date") {
+  required_name_map <- list(
+    "Employee ID" = emp_id_col
+  )
+  optional_name_map <- list(
+    "First Name" = first_name_col,
+    "Last Name" = last_name_col,
+    "Email" = email_col,
+    "Status" = status_col,
+    "Survey Cycle Completion Date" = completion_date_col,
+    "Survey Cycle Sent Date" = sent_date_col
+  )
+  missing_required_names <- names(required_name_map)[vapply(
+    required_name_map,
+    function(x) is.null(x) || is.na(x) || !nzchar(x),
+    logical(1)
+  )]
+  if (length(missing_required_names) > 0) {
+    stop(
+      "Column name(s) must be provided for: ",
+      paste(missing_required_names, collapse = ", "),
+      ".",
+      call. = FALSE
+    )
+  }
 
-  if (length(missing_cols) > 0) {
+  required_cols <- unname(unlist(required_name_map))
+  required_cols <- required_cols[!is.na(required_cols) & nzchar(required_cols)]
+  missing_required_cols <- setdiff(required_cols, names(data))
+  if (length(missing_required_cols) > 0) {
     stop(sprintf(
-      "Missing required standard column(s): %s\n\nYour CSV file must contain all of the following standard Viva Glint columns:\n%s\n\nPlease ensure you are using a complete Viva Glint survey export.",
-      paste0("'", missing_cols, "'", collapse = ", "),
-      paste0("  - ", required_cols, collapse = "\n")
+      "Missing required standard column(s): %s\n\nYour CSV file must contain all of the following required Viva Glint columns:\n%s\n\nColumns detected in the data frame:\n%s\n\nPlease ensure you are using a complete Viva Glint survey export, or pass the correct column name arguments.",
+      paste0("'", missing_required_cols, "'", collapse = ", "),
+      paste0("  - ", required_cols, collapse = "\n"),
+      paste0("  - ", names(data), collapse = "\n")
     ))
   }
 
-  all_standard_cols <- get_standard_columns(emp_id_col)
+  missing_optional_names <- names(optional_name_map)[vapply(
+    optional_name_map,
+    function(x) is.null(x) || is.na(x) || !nzchar(x),
+    logical(1)
+  )]
+  optional_name_map_present <- optional_name_map[setdiff(names(optional_name_map), missing_optional_names)]
+  optional_cols <- unname(unlist(optional_name_map_present))
+  optional_cols <- optional_cols[!is.na(optional_cols) & nzchar(optional_cols)]
+  missing_optional_cols <- setdiff(optional_cols, names(data))
+  missing_optional_labels <- unique(c(
+    missing_optional_names,
+    names(optional_name_map_present)[optional_cols %in% missing_optional_cols]
+  ))
+
+  if (length(missing_optional_labels) > 0) {
+    impact_map <- list(
+      "First Name" = "aggregate_by_manager() manager_name output",
+      "Last Name" = "aggregate_by_manager() manager_name output",
+      "Survey Cycle Completion Date" = "analyze_attrition() (survey date calculations)",
+      "Survey Cycle Sent Date" = "no current functions depend on it",
+      "Email" = "no current functions depend on it",
+      "Status" = "no current functions depend on it"
+    )
+    warning_lines <- c(
+      "Optional standard columns are missing or unspecified. Related functionality may be limited:",
+      vapply(missing_optional_labels, function(label) {
+        expected <- optional_name_map[[label]]
+        expected_note <- if (is.null(expected) || !nzchar(expected)) {
+          "no column name provided"
+        } else {
+          paste0("expected '", expected, "'")
+        }
+        impact <- impact_map[[label]]
+        impact_note <- if (is.null(impact)) "some functionality may be limited" else impact
+        paste0("  - ", label, " (", expected_note, "). Affects: ", impact_note, ".")
+      }, character(1)),
+      "",
+      "Columns detected in the data frame:",
+      paste0("  - ", names(data))
+    )
+    warning(paste(warning_lines, collapse = "\n"), call. = FALSE)
+  }
+
+  all_standard_cols <- get_standard_columns(
+    emp_id_col,
+    first_name_col = first_name_col,
+    last_name_col = last_name_col,
+    email_col = email_col,
+    status_col = status_col,
+    completion_date_col = completion_date_col,
+    sent_date_col = sent_date_col
+  )
   question_cols <- setdiff(names(data), all_standard_cols)
 
   if (length(question_cols) == 0) {
@@ -224,21 +400,23 @@ validate_glint_structure <- function(data, emp_id_col) {
 #' @export
 #'
 #' @examples
-#' \dontrun{
-#' survey <- read_glint_survey("survey_export.csv")
+#' survey_path <- system.file("extdata", "survey_export.csv", package = "vivaglint")
+#' survey <- read_glint_survey(survey_path, emp_id_col = "EMP ID")
 #' questions <- extract_questions(survey)
 #' print(questions)
-#' }
 extract_questions <- function(data, emp_id_col = NULL) {
   if (inherits(data, "glint_survey")) {
     emp_id_col <- data$metadata$emp_id_col %||% emp_id_col
+    standard_cols <- data$metadata$standard_columns
     data <- data$data
+  } else {
+    standard_cols <- NULL
   }
   if (is.null(emp_id_col)) {
     stop("emp_id_col must be specified. When loading with read_glint_survey(), pass emp_id_col to store it automatically.")
   }
 
-  standard_cols <- get_standard_columns(emp_id_col)
+  standard_cols <- standard_cols %||% get_standard_columns(emp_id_col)
   question_cols <- setdiff(names(data), standard_cols)
   question_stems <- unique(sapply(question_cols, get_question_stem))
 
@@ -287,26 +465,13 @@ extract_questions <- function(data, emp_id_col = NULL) {
 #' @export
 #'
 #' @examples
-#' \dontrun{
-#' survey <- read_glint_survey("survey_export.csv")
+#' survey_path <- system.file("extdata", "survey_export.csv", package = "vivaglint")
+#' attr_path <- system.file("extdata", "employee_attributes.csv", package = "vivaglint")
+#' survey <- read_glint_survey(survey_path, emp_id_col = "EMP ID")
 #'
-#' # Join from a file path
-#' survey_enriched <- join_attributes(survey, "employee_attributes.csv")
-#'
-#' # Join from a data frame already in memory
-#' attrs <- readr::read_csv("employee_attributes.csv")
-#' survey_enriched <- join_attributes(survey, attrs)
-#'
-#' # Use the enriched survey directly — no attribute_file needed
+#' survey_enriched <- join_attributes(survey, attr_path, emp_id_col = "EMP ID")
 #' results <- analyze_by_attributes(survey_enriched, scale_points = 5,
 #'                                  attribute_cols = "Department")
-#'
-#' # Filter before analysis
-#' na_only <- survey_enriched
-#' na_only$data <- dplyr::filter(survey_enriched$data, Division == "North America")
-#' results_na <- analyze_by_attributes(na_only, scale_points = 5,
-#'                                     attribute_cols = "Department")
-#' }
 join_attributes <- function(survey, attribute_source, emp_id_col = NULL) {
   if (inherits(survey, "glint_survey")) {
     emp_id_col <- emp_id_col %||% survey$metadata$emp_id_col

@@ -32,8 +32,8 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
-#' survey <- read_glint_survey("survey_export.csv")
+#' survey_path <- system.file("extdata", "survey_export.csv", package = "vivaglint")
+#' survey <- read_glint_survey(survey_path, emp_id_col = "EMP ID")
 #'
 #' # Direct reports only
 #' manager_summary <- aggregate_by_manager(survey, scale_points = 5,
@@ -47,8 +47,9 @@
 #'                                              full_tree = TRUE)
 #'
 #' # With ranked dot plot
-#' aggregate_by_manager(survey, scale_points = 5, emp_id_col = "EMP ID",
-#'                      manager_id_col = "Manager ID", plot = TRUE)
+#' if (requireNamespace("ggplot2", quietly = TRUE)) {
+#'   aggregate_by_manager(survey, scale_points = 5, emp_id_col = "EMP ID",
+#'                        manager_id_col = "Manager ID", plot = TRUE)
 #' }
 aggregate_by_manager <- function(survey, scale_points, emp_id_col = NULL,
                                  manager_id_col, full_tree = FALSE,
@@ -58,13 +59,45 @@ aggregate_by_manager <- function(survey, scale_points, emp_id_col = NULL,
     emp_id_col <- emp_id_col %||% survey$metadata$emp_id_col
     data <- survey$data
     questions <- survey$metadata$questions
+    col_map <- survey$metadata$standard_column_map %||% list()
+    first_name_col <- col_map$first_name %||% "First Name"
+    last_name_col <- col_map$last_name %||% "Last Name"
   } else {
     data <- survey
     questions <- extract_questions(data)
+    first_name_col <- "First Name"
+    last_name_col <- "Last Name"
   }
 
   if (is.null(emp_id_col)) {
     stop("emp_id_col must be specified when survey is a plain data frame")
+  }
+
+  missing_name_labels <- character(0)
+  if (is.null(first_name_col) || !nzchar(first_name_col)) {
+    missing_name_labels <- c(missing_name_labels, "First Name")
+  }
+  if (is.null(last_name_col) || !nzchar(last_name_col)) {
+    missing_name_labels <- c(missing_name_labels, "Last Name")
+  }
+  if (length(missing_name_labels) > 0) {
+    stop(
+      "aggregate_by_manager() requires column name(s) for: ",
+      paste(missing_name_labels, collapse = ", "),
+      ". Provide first_name_col/last_name_col when reading the survey.",
+      call. = FALSE
+    )
+  }
+  missing_name_cols <- setdiff(c(first_name_col, last_name_col), names(data))
+  if (length(missing_name_cols) > 0) {
+    stop(
+      "aggregate_by_manager() requires the following column(s) to build manager names: ",
+      paste0("'", missing_name_cols, "'", collapse = ", "),
+      "\n\nColumns detected in the data frame:\n",
+      paste0("  - ", names(data), collapse = "\n"),
+      "\n\nTo resolve, pass first_name_col/last_name_col when reading with read_glint_survey() or read_glint_survey_api(), or rename your columns.",
+      call. = FALSE
+    )
   }
 
   managers <- data %>%
@@ -74,8 +107,8 @@ aggregate_by_manager <- function(survey, scale_points, emp_id_col = NULL,
 
   manager_names <- data %>%
     dplyr::filter(.data[[emp_id_col]] %in% managers) %>%
-    dplyr::distinct(dplyr::across(dplyr::all_of(c(emp_id_col, "First Name", "Last Name")))) %>%
-    dplyr::mutate(manager_name = paste(`First Name`, `Last Name`))
+    dplyr::distinct(dplyr::across(dplyr::all_of(c(emp_id_col, first_name_col, last_name_col)))) %>%
+    dplyr::mutate(manager_name = paste(.data[[first_name_col]], .data[[last_name_col]]))
 
   results <- purrr::map_dfr(managers, function(mgr_id) {
     if (full_tree) {
