@@ -13,6 +13,7 @@ build_glint_survey(
   status_col = "Status",
   completion_date_col = "Survey Cycle Completion Date",
   sent_date_col = "Survey Cycle Sent Date",
+  manager_id_col = "Manager ID",
   file_path = NA_character_
 )
 }

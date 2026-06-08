@@ -109,9 +109,10 @@ get_standard_columns <- function(emp_id_col,
                                  email_col = "Email",
                                  status_col = "Status",
                                  completion_date_col = "Survey Cycle Completion Date",
-                                 sent_date_col = "Survey Cycle Sent Date") {
-  cols <- c(first_name_col, last_name_col, email_col, status_col, emp_id_col, "Manager ID",
-            completion_date_col, sent_date_col)
+                                 sent_date_col = "Survey Cycle Sent Date",
+                                 manager_id_col = "Manager ID") {
+  cols <- c(first_name_col, last_name_col, email_col, status_col, emp_id_col,
+            manager_id_col, completion_date_col, sent_date_col)
   cols <- cols[!is.na(cols)]
   cols[nzchar(cols)]
 }

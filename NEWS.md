@@ -19,6 +19,25 @@
   returned as a named list of `glint_survey` objects keyed by CSV filename.
   Entries whose CSV does not fit the standard schema fall back to plain
   `data.frame` with a warning.
+* Default column mappings in `read_glint_survey_api()` aligned with the
+  columns the API export actually emits:
+    * `emp_id_col` now defaults to `"Employment ID"` (was `NULL`).
+    * `sent_date_col` now defaults to `NULL` (was `"Survey Cycle Sent
+      Date"`, a column the API does not include).
+    * New `manager_id_col` parameter (default `"Manager ID"`). Previously
+      hardcoded inside `build_glint_survey()` and unreachable from the
+      caller.
+  Net effect: a typical API call like
+  `read_glint_survey_api(mode = "daterange")` now works with zero
+  column-mapping arguments.
+* `validate_glint_structure()` no longer warns about an optional column
+  when the caller explicitly passes `NULL` — an explicit `NULL` is now
+  treated as "skip this concept" rather than "missing column".
+* New `parse` parameter on `read_glint_survey_api()` (default `TRUE`).
+  Setting `parse = FALSE` skips the in-memory CSV parsing and returns the
+  path to the saved zip. `parse = FALSE` requires `save_zip_to` to be set
+  (or `GLINT_SAVE_ZIP_TO`); otherwise the call errors before making the
+  API request.
 * New `save_zip_to` parameter on `read_glint_survey_api()`. When set to a
   file or directory path (or via the `GLINT_SAVE_ZIP_TO` env var), the raw
   export zip Microsoft Graph returns is written to disk in addition to

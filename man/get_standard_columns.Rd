@@ -11,7 +11,8 @@ get_standard_columns(
   email_col = "Email",
   status_col = "Status",
   completion_date_col = "Survey Cycle Completion Date",
-  sent_date_col = "Survey Cycle Sent Date"
+  sent_date_col = "Survey Cycle Sent Date",
+  manager_id_col = "Manager ID"
 )
 }
 \arguments{

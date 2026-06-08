@@ -114,6 +114,7 @@ build_glint_survey <- function(data,
                                status_col = "Status",
                                completion_date_col = "Survey Cycle Completion Date",
                                sent_date_col = "Survey Cycle Sent Date",
+                               manager_id_col = "Manager ID",
                                file_path = NA_character_) {
   validate_glint_structure(
     data,
@@ -123,7 +124,8 @@ build_glint_survey <- function(data,
     email_col = email_col,
     status_col = status_col,
     completion_date_col = completion_date_col,
-    sent_date_col = sent_date_col
+    sent_date_col = sent_date_col,
+    manager_id_col = manager_id_col
   )
 
   standard_cols <- get_standard_columns(
@@ -133,9 +135,12 @@ build_glint_survey <- function(data,
     email_col = email_col,
     status_col = status_col,
     completion_date_col = completion_date_col,
-    sent_date_col = sent_date_col
+    sent_date_col = sent_date_col,
+    manager_id_col = manager_id_col
   )
 
+  # c() drops NULL entries, so date_cols only contains the explicitly-named
+  # date columns. Callers can pass NULL for either to skip parsing entirely.
   date_cols <- c(completion_date_col, sent_date_col)
   for (col in date_cols) {
     if (col %in% names(data)) {
@@ -161,7 +166,7 @@ build_glint_survey <- function(data,
     email = email_col,
     status = status_col,
     emp_id = emp_id_col,
-    manager_id = "Manager ID",
+    manager_id = manager_id_col,
     completion_date = completion_date_col,
     sent_date = sent_date_col
   )
@@ -210,7 +215,8 @@ validate_glint_structure <- function(data,
                                      email_col = "Email",
                                      status_col = "Status",
                                      completion_date_col = "Survey Cycle Completion Date",
-                                     sent_date_col = "Survey Cycle Sent Date") {
+                                     sent_date_col = "Survey Cycle Sent Date",
+                                     manager_id_col = "Manager ID") {
   question_suffixes <- c("_COMMENT", "_COMMENT_TOPICS", "_SENSITIVE_COMMENT_FLAG")
   question_suffix_pattern <- "(_COMMENT|_COMMENT_TOPICS|_SENSITIVE_COMMENT_FLAG)$"
   normalize_name <- function(value) trimws(value, which = "right")
@@ -291,19 +297,22 @@ validate_glint_structure <- function(data,
     ))
   }
 
-  missing_optional_names <- names(optional_name_map)[vapply(
+  # An optional column arg may be:
+  #   - explicitly NULL/NA/empty -> the caller deliberately opted out of that
+  #     concept (e.g. their export doesn't include a Survey Cycle Sent Date
+  #     column). Stay quiet.
+  #   - a column name -> if it isn't in the data, warn so the caller can
+  #     fix the name or adjust their data.
+  optional_specified <- optional_name_map[vapply(
     optional_name_map,
-    function(x) is.null(x) || is.na(x) || !nzchar(x),
+    function(x) !is.null(x) && !is.na(x) && nzchar(x),
     logical(1)
   )]
-  optional_name_map_present <- optional_name_map[setdiff(names(optional_name_map), missing_optional_names)]
-  optional_cols <- unname(unlist(optional_name_map_present))
-  optional_cols <- optional_cols[!is.na(optional_cols) & nzchar(optional_cols)]
+  optional_cols <- unname(unlist(optional_specified))
   missing_optional_cols <- setdiff(optional_cols, names(data))
-  missing_optional_labels <- unique(c(
-    missing_optional_names,
-    names(optional_name_map_present)[optional_cols %in% missing_optional_cols]
-  ))
+  missing_optional_labels <- names(optional_specified)[
+    vapply(optional_specified, function(v) v %in% missing_optional_cols, logical(1))
+  ]
 
   if (length(missing_optional_labels) > 0) {
     impact_map <- list(
@@ -341,7 +350,8 @@ validate_glint_structure <- function(data,
     email_col = email_col,
     status_col = status_col,
     completion_date_col = completion_date_col,
-    sent_date_col = sent_date_col
+    sent_date_col = sent_date_col,
+    manager_id_col = manager_id_col
   )
   question_cols <- setdiff(names(data), all_standard_cols)
   suffix_cols <- question_cols[grepl(question_suffix_pattern, question_cols)]

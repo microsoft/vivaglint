@@ -60,35 +60,41 @@ glint_setup(
 # Three export modes — pick whichever matches the question you want to ask.
 # Inputs you don't pass are read from env vars (GLINT_SURVEY_UUID,
 # GLINT_CYCLE_ID, GLINT_MODE, GLINT_START_DATE, GLINT_END_DATE).
+# The default column mappings match the standard Glint API export, so
+# typical calls need no column arguments.
 
 # Cycle mode (single survey cycle):
 survey <- read_glint_survey_api(
   survey_uuid = "your-survey-uuid",
-  cycle_id    = "your-cycle-id",
-  emp_id_col  = "EMP ID"
+  cycle_id    = "your-cycle-id"
 )
 
 # Survey mode (every cycle of one survey, returned as a named list):
 all_cycles <- read_glint_survey_api(
   mode        = "survey",
-  survey_uuid = "your-survey-uuid",
-  emp_id_col  = "EMP ID"
+  survey_uuid = "your-survey-uuid"
 )
 
 # Date-range mode (every survey active in the window, returned as a named list):
 recent <- read_glint_survey_api(
   mode       = "daterange",
   start_date = "2025-01-01",
-  end_date   = "2025-03-31",
-  emp_id_col = "EMP ID"
+  end_date   = "2025-03-31"
 )
 
 # Any of the above can also persist the raw zip alongside the parsed data
 # by setting save_zip_to (or the GLINT_SAVE_ZIP_TO env var):
 recent <- read_glint_survey_api(
   mode        = "daterange",
-  emp_id_col  = "EMP ID",
   save_zip_to = "~/glint-archive"   # writes glint-export-{job_id}.zip in that folder
+)
+
+# Or skip the parse entirely if you only want the zip on disk
+# (save_zip_to is required when parse = FALSE):
+zip_path <- read_glint_survey_api(
+  mode        = "daterange",
+  parse       = FALSE,
+  save_zip_to = "~/glint-archive"
 )
 
 # 2. Get summary statistics (5-point scale)
